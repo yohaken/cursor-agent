@@ -1,11 +1,6 @@
-import { MarketBoard } from "@/components/market-board";
+import { redirect } from "next/navigation";
 
-export default function MaiMarketPage() {
-  return (
-    <MarketBoard
-      market="mai"
-      title="ตลาด mai — Top 20 มูลค่าตลาด"
-      subtitle="รายชื่อหุ้น mai เท่านั้น เรียงตามมูลค่าตลาดสูงสุด คลิกชื่อหลักทรัพย์เพื่อดูข้อมูลบริษัท"
-    />
-  );
+/** รองรับลิงก์เก่า — เปิดแท็บ mai ในหน้าหลัก */
+export default function MaiRedirectPage() {
+  redirect("/?tab=mai");
 }

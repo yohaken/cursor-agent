@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
-  { href: "/", label: "ตลาด SET" },
-  { href: "/mai", label: "ตลาด mai" },
+  { href: "/", label: "แดชบอร์ด" },
   { href: "/watchlist", label: "Watchlist" },
   { href: "/reports", label: "รายงาน" },
 ];
@@ -20,24 +19,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="block">
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-400/80">SET · mai</p>
             <h1 className="text-xl font-bold">SETPulse</h1>
-            <p className="text-xs text-zinc-500">Top 20 มูลค่าตลาด · รายงานบริษัท</p>
+            <p className="text-xs text-zinc-500">สลับแท็บตลาดในหน้าเดียว</p>
           </Link>
           <nav className="flex flex-wrap gap-2">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-xl px-3 py-2 text-sm transition ${
-                  pathname === item.href
-                    ? item.href === "/mai"
-                      ? "bg-violet-500/15 text-violet-200"
-                      : "bg-cyan-500/15 text-cyan-200"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV.map((item) => {
+              const active =
+                item.href === "/"
+                  ? pathname === "/" || pathname === "/mai"
+                  : pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded-xl px-3 py-2 text-sm transition ${
+                    active
+                      ? "bg-cyan-500/15 text-cyan-200"
+                      : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </header>

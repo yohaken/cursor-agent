@@ -47,7 +47,7 @@ export function CompanyDetail({ profile }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <Link href={profile.market === "mai" ? "/mai" : "/"} className="text-sm text-cyan-400 hover:underline">
+        <Link href={profile.market === "mai" ? "/?tab=mai" : "/"} className="text-sm text-cyan-400 hover:underline">
           ← กลับรายชื่อ{profile.market === "mai" ? " mai" : " SET"}
         </Link>
         <h2 className="mt-3 text-3xl font-bold">

@@ -1,11 +1,5 @@
-import { MarketBoard } from "@/components/market-board";
+import { MarketDashboard } from "@/components/market-dashboard";
 
-export default function SetMarketPage() {
-  return (
-    <MarketBoard
-      market="SET"
-      title="ตลาด SET — Top 20 มูลค่าตลาด"
-      subtitle="รายชื่อหุ้น SET เรียงตามมูลค่าตลาดสูงสุด คลิกชื่อหลักทรัพย์เพื่อดูข้อมูลบริษัท"
-    />
-  );
+export default function HomePage() {
+  return <MarketDashboard />;
 }
