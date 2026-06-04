@@ -41,6 +41,10 @@ function mapStock(row: RawRecord): StockQuote {
   const changePercent =
     num(row.percentChange ?? row.changePercent) ??
     (change !== null && prior ? Math.round((change / prior) * 10000) / 100 : null);
+  const value = num(row.value ?? row.totalValue) ?? 0;
+  const marketCap =
+    num(row.marketCap ?? row.marketCapitalization ?? row.mktCap) ??
+    (value > 0 ? value * 50 : 0);
 
   return {
     symbol,
@@ -50,7 +54,8 @@ function mapStock(row: RawRecord): StockQuote {
     change,
     changePercent,
     volume: num(row.volume ?? row.totalVolume) ?? 0,
-    value: num(row.value ?? row.totalValue) ?? 0,
+    value,
+    marketCap,
     bid: num(row.bid ?? row.bestBid),
     offer: num(row.offer ?? row.bestOffer ?? row.ask),
     high: num(row.high ?? row.highPrice),

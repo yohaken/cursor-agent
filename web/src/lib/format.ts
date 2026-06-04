@@ -12,6 +12,14 @@ export function formatVolume(value: number): string {
   return value.toLocaleString("th-TH");
 }
 
+/** มูลค่าตลาด / มูลค่าเงินบาทขนาดใหญ่ */
+export function formatMarketCap(value: number): string {
+  if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)} ล้านล้าน`;
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} พันล้าน`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)} ล้าน`;
+  return value.toLocaleString("th-TH");
+}
+
 export function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString("th-TH", { hour12: false });

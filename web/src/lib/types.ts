@@ -10,7 +10,10 @@ export interface StockQuote {
   change: number | null;
   changePercent: number | null;
   volume: number;
+  /** มูลค่าการซื้อขาย (บาท) */
   value: number;
+  /** มูลค่าตลาด (บาท) — ใช้จัดอันดับ Top 20 */
+  marketCap: number;
   bid: number | null;
   offer: number | null;
   high: number | null;
@@ -33,15 +36,28 @@ export interface QuotesResponse {
   mode: QuoteMode;
   source: "set" | "mock";
   market: string;
+  top: number;
   updatedAt: string;
   quotes: StockQuote[];
 }
 
-export interface IndicesResponse {
-  mode: QuoteMode;
-  source: "set" | "mock";
-  updatedAt: string;
-  indices: IndexQuote[];
+export interface CompanyProfile {
+  symbol: string;
+  name: string;
+  market: MarketCode;
+  sector: string;
+  businessDescription: string;
+  website?: string;
+  latestQuarter: string;
+}
+
+export interface MdaSummaryResult {
+  symbol: string;
+  quarter: string;
+  downloadedAt: string;
+  summary: string;
+  highlights: string[];
+  rawText: string;
 }
 
 export function pollIntervalMs(mode: QuoteMode): number {

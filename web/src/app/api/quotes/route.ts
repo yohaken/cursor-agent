@@ -5,8 +5,9 @@ import { z } from "zod";
 
 const querySchema = z.object({
   mode: z.enum(["realtime", "delay10"]).default("delay10"),
-  market: z.string().default("SET,mai"),
+  market: z.string().default("SET"),
   symbols: z.string().optional(),
+  top: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export async function GET(request: NextRequest) {
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
     mode: parsed.data.mode as QuoteMode,
     market: parsed.data.market,
     symbols,
+    top: parsed.data.top,
   });
 
   return NextResponse.json(payload);

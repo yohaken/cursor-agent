@@ -1,18 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IndexCards } from "@/components/index-cards";
 import { ModeToggle } from "@/components/mode-toggle";
 import { QuoteTable } from "@/components/quote-table";
 import { pollIntervalMs } from "@/lib/types";
-import type { IndexQuote, QuoteMode, StockQuote } from "@/lib/types";
+import type { IndexQuote, MarketCode, QuoteMode, StockQuote } from "@/lib/types";
 
 const WATCHLIST_KEY = "setpulse_watchlist";
+const TOP_N = 20;
 
+type Props = {
+  market: MarketCode;
+  title: string;
+  subtitle: string;
+};
 
-export function DashboardClient() {
+export function MarketBoard({ market, title, subtitle }: Props) {
   const [mode, setMode] = useState<QuoteMode>("delay10");
-  const [marketFilter, setMarketFilter] = useState<"all" | "SET" | "mai">("all");
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
   const [indices, setIndices] = useState<IndexQuote[]>([]);
   const [source, setSource] = useState<"set" | "mock">("mock");
@@ -31,36 +36,35 @@ export function DashboardClient() {
     }
   }, []);
 
-  const marketParam = useMemo(() => {
-    if (marketFilter === "SET") return "SET";
-    if (marketFilter === "mai") return "mai";
-    return "SET,mai";
-  }, [marketFilter]);
-
   const refresh = useCallback(async () => {
     try {
       const [qRes, iRes] = await Promise.all([
-        fetch(`/api/quotes?mode=${mode}&market=${encodeURIComponent(marketParam)}`),
+        fetch(`/api/quotes?mode=${mode}&market=${market}&top=${TOP_N}`),
         fetch(`/api/indices?mode=${mode}`),
       ]);
       if (!qRes.ok || !iRes.ok) return;
       const qJson = await qRes.json();
       const iJson = await iRes.json();
       setQuotes(qJson.quotes ?? []);
-      setIndices(iJson.indices ?? []);
+      const allIndices: IndexQuote[] = iJson.indices ?? [];
+      setIndices(
+        market === "mai"
+          ? allIndices.filter((i) => i.market === "mai" || i.symbol.toLowerCase() === "mai")
+          : allIndices.filter((i) => i.market === "SET" || ["SET", "SET50"].includes(i.symbol)),
+      );
       setSource(qJson.source ?? "mock");
       setUpdatedAt(qJson.updatedAt ?? new Date().toISOString());
     } finally {
       setLoading(false);
     }
-  }, [mode, marketParam]);
+  }, [mode, market]);
 
   useEffect(() => {
     setLoading(true);
     refresh();
     const id = window.setInterval(refresh, pollIntervalMs(mode));
     return () => window.clearInterval(id);
-  }, [mode, marketParam, refresh]);
+  }, [mode, market, refresh]);
 
   function toggleWatch(symbol: string) {
     setWatchlist((prev) => {
@@ -76,39 +80,28 @@ export function DashboardClient() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold">ภาพรวมตลาด SET / mai</h2>
-          <p className="text-sm text-zinc-500">เข้าใช้งานได้ทันที — ไม่ต้องล็อกอิน</p>
+          <h2 className="text-2xl font-semibold">{title}</h2>
+          <p className="text-sm text-zinc-500">{subtitle}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <ModeToggle mode={mode} onChange={setMode} />
-          <select
-            value={marketFilter}
-            onChange={(e) => setMarketFilter(e.target.value as "all" | "SET" | "mai")}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200"
-          >
-            <option value="all">ทุกตลาด</option>
-            <option value="SET">SET</option>
-            <option value="mai">mai</option>
-          </select>
-        </div>
+        <ModeToggle mode={mode} onChange={setMode} />
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
         <span className="rounded-full border border-white/10 px-2 py-1">
+          Top {TOP_N} มูลค่าตลาดสูงสุด
+        </span>
+        <span className="rounded-full border border-white/10 px-2 py-1">
           แหล่งข้อมูล: {source === "set" ? "SET SMART Marketplace" : "จำลอง (demo)"}
         </span>
         <span className="rounded-full border border-white/10 px-2 py-1">
-          อัปเดตล่าสุด: {updatedAt ? new Date(updatedAt).toLocaleString("th-TH") : "—"}
-        </span>
-        <span className="rounded-full border border-white/10 px-2 py-1">
-          รีเฟรชทุก {pollIntervalMs(mode) / 1000} วินาที
+          อัปเดต: {updatedAt ? new Date(updatedAt).toLocaleString("th-TH") : "—"}
         </span>
       </div>
 
-      <IndexCards indices={indices} />
+      {indices.length > 0 && <IndexCards indices={indices} />}
 
       {loading ? (
-        <p className="text-sm text-zinc-500">กำลังโหลดราคา...</p>
+        <p className="text-sm text-zinc-500">กำลังโหลดรายชื่อ...</p>
       ) : (
         <QuoteTable quotes={quotes} watchlist={watchlist} onToggleWatch={toggleWatch} />
       )}

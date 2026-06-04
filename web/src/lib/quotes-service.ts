@@ -1,14 +1,19 @@
 import { getDelayedQuotes, pushRealtimeSnapshot } from "./quote-buffer";
 import { getMockIndices, getMockStocks } from "./mock-engine";
+import { topByMarketCap } from "./rankings";
 import { fetchSetIndices, fetchSetStocks, hasSetApiKey } from "./set-api";
 import type { IndexQuote, QuoteMode, QuotesResponse, StockQuote } from "./types";
+
+const DEFAULT_TOP = 20;
 
 export async function resolveStockQuotes(options: {
   mode: QuoteMode;
   market: string;
   symbols?: string[];
+  top?: number;
 }): Promise<QuotesResponse> {
   const { mode, market, symbols } = options;
+  const top = options.top ?? DEFAULT_TOP;
   let source: "set" | "mock" = "mock";
   let quotes: StockQuote[] = [];
 
@@ -38,10 +43,15 @@ export async function resolveStockQuotes(options: {
     }
   }
 
+  if (!symbols?.length) {
+    quotes = topByMarketCap(quotes, top);
+  }
+
   return {
     mode,
     source,
     market,
+    top,
     updatedAt: new Date().toISOString(),
     quotes,
   };
@@ -68,8 +78,4 @@ export async function resolveIndexQuotes(mode: QuoteMode): Promise<{
   }
 
   return { source, updatedAt: new Date().toISOString(), indices };
-}
-
-export function pollIntervalMs(mode: QuoteMode): number {
-  return mode === "realtime" ? 2000 : 10_000;
 }
