@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const NAV = [
   { href: "/", label: "แดชบอร์ด" },
@@ -9,21 +9,8 @@ const NAV = [
   { href: "/reports", label: "รายงาน" },
 ];
 
-export function AppShell({
-  email,
-  children,
-}: {
-  email: string;
-  children: React.ReactNode;
-}) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
-  }
 
   return (
     <div className="min-h-screen bg-[#070b12] text-zinc-100">
@@ -49,16 +36,6 @@ export function AppShell({
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-zinc-500 sm:inline">{email}</span>
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-xl border border-white/10 px-3 py-2 text-zinc-300 hover:bg-white/5"
-            >
-              ออกจากระบบ
-            </button>
-          </div>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>

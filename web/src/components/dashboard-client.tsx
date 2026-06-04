@@ -9,11 +9,8 @@ import type { IndexQuote, QuoteMode, StockQuote } from "@/lib/types";
 
 const WATCHLIST_KEY = "setpulse_watchlist";
 
-type Props = {
-  email: string;
-};
 
-export function DashboardClient({ email }: Props) {
+export function DashboardClient() {
   const [mode, setMode] = useState<QuoteMode>("delay10");
   const [marketFilter, setMarketFilter] = useState<"all" | "SET" | "mai">("all");
   const [quotes, setQuotes] = useState<StockQuote[]>([]);
@@ -79,8 +76,8 @@ export function DashboardClient({ email }: Props) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">สวัสดี {email}</p>
           <h2 className="text-2xl font-semibold">ภาพรวมตลาด SET / mai</h2>
+          <p className="text-sm text-zinc-500">เข้าใช้งานได้ทันที — ไม่ต้องล็อกอิน</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <ModeToggle mode={mode} onChange={setMode} />

@@ -22,7 +22,7 @@ cd web && npm ci
 
 Copy `web/.env.example` → `web/.env.local`. Optional `SET_API_KEY` from SET SMART Marketplace; without it the app uses mock quotes.
 
-Demo login: `demo@setpulse.local` / `demo12345`.
+No login required — open `/` directly.
 
 ### Lint / test / build
 
@@ -34,6 +34,6 @@ No automated test suite yet.
 
 ### Gotchas
 
-- API routes require session cookie; use `/api/auth/login` before calling `/api/quotes`.
+- API routes are open (no auth) for personal trial use.
 - `pollIntervalMs`: realtime 2s, delay10 10s.
 - Production SET data requires licensing per SET terms.

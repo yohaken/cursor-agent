@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionEmail } from "@/lib/auth";
 import { resolveIndexQuotes } from "@/lib/quotes-service";
 import type { QuoteMode } from "@/lib/types";
 import { z } from "zod";
@@ -9,11 +8,6 @@ const querySchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const email = await getSessionEmail();
-  if (!email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const parsed = querySchema.safeParse(
     Object.fromEntries(request.nextUrl.searchParams.entries()),
   );

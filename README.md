@@ -14,10 +14,7 @@ npm install
 npm run dev
 ```
 
-เปิด [http://localhost:3000](http://localhost:3000) แล้วล็อกอินด้วย:
-
-- อีเมล: `demo@setpulse.local`
-- รหัสผ่าน: `demo12345`
+เปิด [http://localhost:3000](http://localhost:3000) — เข้าแดชบอร์ดได้ทันที ไม่ต้องล็อกอิน
 
 ## ข้อมูลจริงจาก SET
 
