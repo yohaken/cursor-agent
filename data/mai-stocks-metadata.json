@@ -1,0 +1,18 @@
+{
+  "market": "mai",
+  "market_name": "Market for Alternative Investment (mai)",
+  "total_stocks": 229,
+  "last_updated": "2026-06-12T00:34:39.688877",
+  "data_source": "https://www.set.or.th/dat/eod/listedcompany/static/listedCompanies_en_US.xls",
+  "tradingview_exchange_prefix": "SET",
+  "generated_at": "2026-06-12T04:22:50.719492+00:00",
+  "files": {
+    "tradingview_txt": "mai-tradingview-import.txt",
+    "tradingview_csv": "mai-tradingview-import.csv",
+    "full_list_en": "mai-stocks-en.csv"
+  },
+  "import_instructions": {
+    "th": "ใน TradingView คลิกชื่อ Watchlist > นำเข้ารายการ > เลือกไฟล์ mai-tradingview-import.txt",
+    "en": "In TradingView: click Watchlist name > Import list > select mai-tradingview-import.txt"
+  }
+}
