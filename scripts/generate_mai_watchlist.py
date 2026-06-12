@@ -40,7 +40,11 @@ def generate(output_dir: Path = OUTPUT_DIR) -> int:
     mai_th_map = {s["symbol"]: s for s in mai_th}
     tv_symbols = [f"SET:{s['symbol']}" for s in mai_en]
 
+    # One symbol per line — matches working TradingView import examples
     (output_dir / "mai-tradingview-import.txt").write_text(
+        "\n".join(tv_symbols) + "\n", encoding="utf-8"
+    )
+    (output_dir / "mai-tradingview-import-comma.txt").write_text(
         ",".join(tv_symbols), encoding="utf-8"
     )
 
