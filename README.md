@@ -34,3 +34,37 @@ python scripts/generate_mai_watchlist.py
 ```
 
 สคริปต์จะดึงข้อมูลล่าสุดจาก SET (ผ่าน JSON mirror ที่ sync จากไฟล์ Excel ทางการ) แล้วสร้างไฟล์ใหม่ในโฟลเดอร์ `data/`
+
+## แจ้งเตือนข่าว AiO ผ่าน Telegram
+
+ติดตามข่าวจาก [aio.panphol.com/news](https://aio.panphol.com/news) แล้วส่งหัวข้อใหม่เข้า Telegram ทุก 1 ชั่วโมง (ไม่ส่งซ้ำ)
+
+### ตั้งค่า (ครั้งเดียว)
+
+1. คัดลอก `.env.example` เป็น `.env` แล้วใส่ค่า:
+   - `TELEGRAM_BOT_TOKEN` — จาก [@BotFather](https://t.me/BotFather)
+   - `TELEGRAM_CHAT_ID` — รหัสแชทผู้รับ
+2. ติดตั้ง dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. รันครั้งแรกเพื่อบันทึกข่าววันนี้เป็นฐานข้อมูล (ไม่ส่งย้อนหลัง):
+
+```bash
+export $(grep -v '^#' .env | xargs)
+python scripts/monitor_aio_news.py --bootstrap
+```
+
+4. สำหรับ GitHub Actions ให้เพิ่ม Secrets ใน repo:
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+
+Workflow อยู่ที่ `.github/workflows/aio-news-monitor.yml` — รันอัตโนมัติทุกชั่วโมง
+
+### รันด้วยตนเอง
+
+```bash
+python scripts/monitor_aio_news.py
+```
