@@ -1,0 +1,36 @@
+name: Durian Dashboard Daily Update
+
+on:
+  schedule:
+    # 08:00 น. ตามเวลาไทย (UTC+7) ทุกวัน
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scrape latest durian data
+        run: python -m durian_dashboard
+
+      - name: Export Excel report
+        run: python -m durian_dashboard.export_excel
+
+      - name: Commit updated data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update durian dashboard data [skip ci]"
+          file_pattern: data/durian-dashboard.json data/durian-dashboard-report.xlsx
