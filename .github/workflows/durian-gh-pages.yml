@@ -1,0 +1,37 @@
+name: Publish Durian Dashboard (gh-pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "data/durian-dashboard.json"
+      - "scripts/build_static_durian_site.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild static dashboard
+        run: |
+          pip install pandas plotly
+          python scripts/build_static_durian_site.py
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          force_orphan: true
