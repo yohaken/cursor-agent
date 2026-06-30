@@ -109,7 +109,15 @@ python -m durian_dashboard.export_excel
 
 ไฟล์ผลลัพธ์: `data/durian-dashboard-report.xlsx` (8 แผ่น: สรุปรายปี, รายวันรวม/แยกภาค, รายสัปดาห์)
 
-### URL คงที่ + อัปเดตอัตโนมัติทุกวัน
+### URL คงที่ (พร้อมใช้แล้ว)
+
+**Dashboard:** https://yohaken.github.io/cursor-agent/durian/
+
+**ดาวน์โหลด Excel:** https://github.com/yohaken/cursor-agent/raw/main/data/durian-dashboard-report.xlsx
+
+อัปเดตอัตโนมัติทุกวัน 08:00 น. ผ่าน GitHub Actions
+
+### URL คงที่ + อัปเดตอัตโนมัติทุกวัน (Streamlit เพิ่มเติม)
 
 ดูคู่มือฉบับเต็ม: [`docs/durian-deployment-th.md`](docs/durian-deployment-th.md)
 

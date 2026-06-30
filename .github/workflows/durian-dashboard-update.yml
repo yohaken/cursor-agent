@@ -29,8 +29,11 @@ jobs:
       - name: Export Excel report
         run: python -m durian_dashboard.export_excel
 
+      - name: Build static site for GitHub Pages
+        run: python scripts/build_static_durian_site.py
+
       - name: Commit updated data
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update durian dashboard data [skip ci]"
-          file_pattern: data/durian-dashboard.json data/durian-dashboard-report.xlsx
+          file_pattern: data/durian-dashboard.json data/durian-dashboard-report.xlsx docs/

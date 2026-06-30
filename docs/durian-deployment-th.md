@@ -137,9 +137,9 @@ WorkingDirectory=/path/to/cursor-agent
 
 | ต้องการ | ทำอย่างไร |
 |---------|-----------|
-| URL คงที่ | Deploy ที่ **Streamlit Cloud** (ฟรี) |
-| อัปเดตทุกวันอัตโนมัติ | เปิดใช้ **GitHub Actions** workflow ที่เตรียมไว้ |
-| ดูข้อมูล | เปิด `https://xxx.streamlit.app` |
-| ดาวน์โหลด Excel | กดปุ่มในแถบซ้ายของ Dashboard |
+| **URL คงที่ (พร้อมใช้)** | https://yohaken.github.io/cursor-agent/durian/ |
+| อัปเดตทุกวันอัตโนมัติ | เปิดใช้แล้ว — GitHub Actions 08:00 น. |
+| ดาวน์โหลด Excel | https://github.com/yohaken/cursor-agent/raw/main/data/durian-dashboard-report.xlsx |
+| Streamlit (ตัวกรองเพิ่ม) | Deploy ที่ share.streamlit.io → `streamlit_app.py` |
 
-**เวลาทำครั้งแรก:** ประมาณ 15–20 นาที (merge PR + ตั้ง Streamlit Cloud)
+**ไม่ต้องตั้งชื่อเอง** — ใช้ลิงก์ GitHub Pages ด้านบนได้ทันที
