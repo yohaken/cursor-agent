@@ -230,6 +230,25 @@ def main() -> None:
         if data.get("scraped_at"):
             st.caption(f"อัปเดตข้อมูล: {data['scraped_at'][:19]} UTC")
 
+        st.divider()
+        st.subheader("ส่งออก Excel")
+        try:
+            from durian_dashboard.export_excel import export_excel, DEFAULT_OUTPUT
+
+            if st.button("สร้างไฟล์ Excel", use_container_width=True):
+                export_excel()
+                st.success("สร้างไฟล์เรียบร้อย")
+            if DEFAULT_OUTPUT.exists():
+                st.download_button(
+                    label="ดาวน์โหลดรายงาน Excel",
+                    data=DEFAULT_OUTPUT.read_bytes(),
+                    file_name=DEFAULT_OUTPUT.name,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                )
+        except Exception as exc:
+            st.warning(f"ไม่สามารถสร้าง Excel: {exc}")
+
     df = df[df["be_year"].isin(selected_years)]
 
     # KPI row

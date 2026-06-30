@@ -100,3 +100,11 @@ python -m durian_dashboard
 ```
 
 ข้อมูลถูกบันทึกที่ `data/durian-dashboard.json`
+
+### ส่งออก Excel
+
+```bash
+python -m durian_dashboard.export_excel
+```
+
+ไฟล์ผลลัพธ์: `data/durian-dashboard-report.xlsx` (8 แผ่น: สรุปรายปี, รายวันรวม/แยกภาค, รายสัปดาห์)
