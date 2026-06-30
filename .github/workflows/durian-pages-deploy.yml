@@ -1,0 +1,47 @@
+name: Deploy Durian Dashboard Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "data/durian-dashboard.json"
+      - "scripts/build_static_durian_site.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: durian-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild static dashboard
+        run: |
+          pip install pandas plotly
+          python scripts/build_static_durian_site.py
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
