@@ -108,3 +108,13 @@ python -m durian_dashboard.export_excel
 ```
 
 ไฟล์ผลลัพธ์: `data/durian-dashboard-report.xlsx` (8 แผ่น: สรุปรายปี, รายวันรวม/แยกภาค, รายสัปดาห์)
+
+### URL คงที่ + อัปเดตอัตโนมัติทุกวัน
+
+ดูคู่มือฉบับเต็ม: [`docs/durian-deployment-th.md`](docs/durian-deployment-th.md)
+
+สรุปสั้นๆ:
+1. Merge โค้ดเข้า `main`
+2. เปิดใช้ GitHub Actions workflow **Durian Dashboard Daily Update** (ดึงข้อมูล 08:00 น. ทุกวัน)
+3. Deploy ที่ [Streamlit Community Cloud](https://share.streamlit.io) ชี้ไปที่ `streamlit_app.py`
+4. ได้ URL ถาวร เช่น `https://your-app.streamlit.app`

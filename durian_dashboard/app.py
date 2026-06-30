@@ -19,7 +19,9 @@ VARIETIES = ["หมอนทอง", "ชะนี", "ก้านยาว", "
 def load_data() -> dict:
     if not DATA_PATH.exists():
         return {"years": {}}
-    return json.loads(DATA_PATH.read_text(encoding="utf-8"))
+    data = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+    data["_file_mtime"] = DATA_PATH.stat().st_mtime
+    return data
 
 
 def daily_df(data: dict) -> pd.DataFrame:
