@@ -109,26 +109,20 @@ python -m durian_dashboard.export_excel
 
 ไฟล์ผลลัพธ์: `data/durian-dashboard-report.xlsx` (8 แผ่น: สรุปรายปี, รายวันรวม/แยกภาค, รายสัปดาห์)
 
-### URL คงที่ (พร้อมใช้แล้ว)
+### URL คงที่ (Repo Private → ใช้ Streamlit Cloud)
 
-| รายการ | ลิงก์ |
-|--------|------|
-| **Dashboard (ลิงก์หลัก)** | https://yohaken.github.io/cursor-agent/durian/ |
-| **Dashboard (สำรอง)** | https://htmlpreview.github.io/?https://raw.githubusercontent.com/yohaken/cursor-agent/main/docs/durian/index.html |
-| **ดาวน์โหลด Excel** | https://github.com/yohaken/cursor-agent/raw/main/data/durian-dashboard-report.xlsx |
+Repo เป็น **Private** อยู่ — **GitHub Pages ใช้ไม่ได้** (ต้อง Public หรือ GitHub Pro)
 
-> ข้อมูลมีอยู่แล้วในระบบ ไม่ต้องรอถึงเช้า — อัปเดตอัตโนมัติเพิ่มทุกวัน **08:00 น.**
+**วิธีที่ถูกต้อง:** Deploy ที่ [Streamlit Community Cloud](https://share.streamlit.io) → ไฟล์ `streamlit_app.py`
 
-อัปเดตอัตโนมัติทุกวัน 08:00 น. ผ่าน GitHub Actions
+คู่มือทีละขั้น: **[`docs/durian-private-setup-th.md`](docs/durian-private-setup-th.md)**
 
-**ถ้าลิงก์หลักยัง 404:** รอ 2–3 นาทีหลัง push หรือใช้ลิงก์สำรองด้านบน
+| ขั้นตอน | รายละเอียด |
+|---------|------------|
+| 1 | Login https://share.streamlit.io ด้วย GitHub |
+| 2 | New app → repo `cursor-agent` → `streamlit_app.py` |
+| 3 | ได้ URL ถาวร เช่น `https://durian-dashboard-th.streamlit.app` |
 
-### URL คงที่ + อัปเดตอัตโนมัติทุกวัน (Streamlit เพิ่มเติม)
+อัปเดตข้อมูลอัตโนมัติ **ทุกวัน 08:00 น.** ผ่าน GitHub Actions (ไม่ต้องพึ่ง Cursor)
 
-ดูคู่มือฉบับเต็ม: [`docs/durian-deployment-th.md`](docs/durian-deployment-th.md)
-
-สรุปสั้นๆ:
-1. Merge โค้ดเข้า `main`
-2. เปิดใช้ GitHub Actions workflow **Durian Dashboard Daily Update** (ดึงข้อมูล 08:00 น. ทุกวัน)
-3. Deploy ที่ [Streamlit Community Cloud](https://share.streamlit.io) ชี้ไปที่ `streamlit_app.py`
-4. ได้ URL ถาวร เช่น `https://your-app.streamlit.app`
+> ข้อมูลมีอยู่แล้วใน repo — ไม่ต้องรอถึงเช้า 08:00 น. คือการดึงข้อมูลใหม่จาก DOAE
