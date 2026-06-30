@@ -111,11 +111,15 @@ python -m durian_dashboard.export_excel
 
 ### URL คงที่ (พร้อมใช้แล้ว)
 
-**Dashboard:** https://yohaken.github.io/cursor-agent/durian/
-
-**ดาวน์โหลด Excel:** https://github.com/yohaken/cursor-agent/raw/main/data/durian-dashboard-report.xlsx
+| รายการ | ลิงก์ |
+|--------|------|
+| **Dashboard (ใช้ได้ทันที)** | https://htmlpreview.github.io/?https://github.com/yohaken/cursor-agent/raw/main/docs/durian/index.html |
+| **Dashboard (URL สั้น — หลังเปิด Pages)** | https://yohaken.github.io/cursor-agent/durian/ |
+| **ดาวน์โหลด Excel** | https://github.com/yohaken/cursor-agent/raw/main/data/durian-dashboard-report.xlsx |
 
 อัปเดตอัตโนมัติทุกวัน 08:00 น. ผ่าน GitHub Actions
+
+**เปิด URL สั้น (ครั้งเดียว):** GitHub repo → **Settings** → **Pages** → Build: **GitHub Actions** → Save
 
 ### URL คงที่ + อัปเดตอัตโนมัติทุกวัน (Streamlit เพิ่มเติม)
 
