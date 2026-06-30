@@ -2,7 +2,8 @@
 """Monitor AiO stock news and send new headlines to Telegram.
 
 Data source: https://aio.panphol.com/news/data
-Default scope matches the /news landing view: today's news only (days_ago == 0).
+Scope matches the /news landing view: today's news when available, otherwise
+the newest first-page items (same fallback as the website).
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import httpx
 
 NEWS_API = "https://aio.panphol.com/news/data"
 SEEN_FILE = Path(__file__).resolve().parent.parent / "data" / "aio-news-seen.json"
+FIRST_PAGE_SIZE = 30
 SOURCE_LABELS = {
     "mitihoon": "Mitihoon",
     "kaohoon": "Kaohoon",
@@ -27,13 +29,20 @@ SOURCE_LABELS = {
 }
 
 
-def fetch_today_news(client: httpx.Client) -> list[dict]:
+def fetch_all_news(client: httpx.Client) -> list[dict]:
     response = client.get(NEWS_API)
     response.raise_for_status()
     payload = response.json()
     if not payload.get("ok"):
         raise RuntimeError("AiO news API returned ok=false")
-    return [item for item in payload["data"] if item.get("days_ago") == 0]
+    return payload["data"]
+
+
+def get_monitored_news(all_news: list[dict]) -> tuple[list[dict], str]:
+    today_news = [item for item in all_news if item.get("days_ago") == 0]
+    if today_news:
+        return today_news, "today"
+    return all_news[:FIRST_PAGE_SIZE], "first_page"
 
 
 def load_state() -> dict:
@@ -78,32 +87,41 @@ def send_telegram(client: httpx.Client, text: str) -> None:
         raise RuntimeError(f"Telegram API error: {payload}")
 
 
-def run(*, bootstrap: bool = False, dry_run: bool = False) -> int:
+def run(*, bootstrap: bool = False, restart: bool = False, dry_run: bool = False) -> int:
     now = datetime.now(timezone.utc).isoformat()
 
     with httpx.Client(timeout=30, headers={"User-Agent": "cursor-agent-aio-news-monitor/1.0"}) as client:
-        today_news = fetch_today_news(client)
+        all_news = fetch_all_news(client)
+        monitored_news, scope = get_monitored_news(all_news)
         state = load_state()
         seen = set(state.get("seen_ids", []))
-        new_items = [item for item in today_news if str(item["id"]) not in seen]
+        new_items = [item for item in monitored_news if str(item["id"]) not in seen]
+        scope_label = "ข่าววันนี้" if scope == "today" else f"หน้าแรก ({FIRST_PAGE_SIZE} รายการล่าสุด)"
 
-        if bootstrap or not state.get("bootstrapped_at"):
-            for item in today_news:
+        if bootstrap or restart or not state.get("bootstrapped_at"):
+            for item in monitored_news:
                 seen.add(str(item["id"]))
             state["seen_ids"] = sorted(seen, key=int, reverse=True)
             state["bootstrapped_at"] = state.get("bootstrapped_at") or now
             state["last_check_at"] = now
+            state["scope"] = scope
             if not dry_run:
                 save_state(state)
-                send_telegram(
-                    client,
-                    (
+                if restart:
+                    message = (
+                        "🔄 เริ่มทำงานอีกครั้ง\n"
+                        f"📋 บันทึก{scope_label} {len(monitored_news)} รายการเป็นฐานข้อมูล\n"
+                        "⏰ จะเช็กข่าวใหม่ทุก 1 ชั่วโมง (ไม่ส่งซ้ำ)"
+                    )
+                else:
+                    message = (
                         "✅ เริ่มติดตามข่าว AiO แล้ว\n"
-                        f"📋 บันทึกข่าววันนี้ {len(today_news)} รายการเป็นฐานข้อมูล (ไม่ส่งซ้ำ)\n"
+                        f"📋 บันทึก{scope_label} {len(monitored_news)} รายการเป็นฐานข้อมูล (ไม่ส่งซ้ำ)\n"
                         "⏰ จะเช็กข่าวใหม่ทุก 1 ชั่วโมง"
-                    ),
-                )
-            print(f"Bootstrapped {len(today_news)} today news items")
+                    )
+                send_telegram(client, message)
+            action = "Restarted" if restart else "Bootstrapped"
+            print(f"{action} {len(monitored_news)} items ({scope_label})")
             return 0
 
         sent = 0
@@ -119,10 +137,11 @@ def run(*, bootstrap: bool = False, dry_run: bool = False) -> int:
 
         state["seen_ids"] = sorted(seen, key=int, reverse=True)
         state["last_check_at"] = now
+        state["scope"] = scope
         if not dry_run:
             save_state(state)
 
-        print(f"Checked {len(today_news)} today items, sent {sent} new notifications")
+        print(f"Checked {len(monitored_news)} items ({scope_label}), sent {sent} new notifications")
         return sent
 
 
@@ -131,7 +150,12 @@ def main() -> None:
     parser.add_argument(
         "--bootstrap",
         action="store_true",
-        help="Seed today's news as already seen and send a startup message",
+        help="Seed current monitored news as already seen and send a startup message",
+    )
+    parser.add_argument(
+        "--restart",
+        action="store_true",
+        help="Re-seed current monitored news and send a resume message",
     )
     parser.add_argument(
         "--dry-run",
@@ -141,7 +165,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        run(bootstrap=args.bootstrap, dry_run=args.dry_run)
+        run(bootstrap=args.bootstrap, restart=args.restart, dry_run=args.dry_run)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
