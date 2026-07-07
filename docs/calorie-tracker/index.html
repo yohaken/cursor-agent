@@ -1225,7 +1225,7 @@
       els.exerciseTemplateEditor.innerHTML = '';
       loadSettings().exerciseTemplates.forEach((t, i) => {
         const row = document.createElement('div');
-        row.className = 'field-row'; row.style.marginBottom = '0.4rem';
+        row.className = 'field-row-3'; row.style.marginBottom = '0.4rem';
         row.innerHTML = '<input data-extpl="label" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
           + '<input data-extpl="kcal" data-i="' + i + '" value="' + t.calories + '" inputmode="numeric" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
           + '<input data-extpl="note" data-i="' + i + '" value="' + String(t.note || '').replace(/"/g, '&quot;') + '" placeholder="โน้ต" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
