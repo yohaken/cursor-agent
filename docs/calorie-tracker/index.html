@@ -76,15 +76,15 @@
       margin-bottom: 0.15rem; line-height: 1.1;
     }
     .period-stat {
-      font-size: 0.48rem; color: var(--muted); line-height: 1.15;
+      font-size: 0.45rem; color: var(--muted); line-height: 1.12;
     }
     .period-stat .val {
-      display: block; font-size: 0.52rem; font-weight: 600; color: var(--text);
+      display: block; font-size: 0.48rem; font-weight: 600; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .period-stat .val.good { color: var(--success); }
     .period-stat .val.bad { color: var(--danger); }
-    .period-stat .val.neutral { color: var(--muted); }
+    .period-stat .val.burn { color: var(--success); }
 
     .date-nav {
       display: flex; align-items: center; gap: 0.35rem;
@@ -103,8 +103,17 @@
     }
 
     .inline-stats {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;
     }
+    .mini-stat .val.sm { font-size: 0.82rem; }
+    .bsum-strip {
+      font-size: 0.58rem; color: var(--muted); text-align: center;
+      padding: 0.35rem 0.4rem; margin-top: 0.35rem;
+      background: var(--surface); border-radius: 8px; box-shadow: var(--shadow);
+      line-height: 1.35;
+    }
+    .bsum-strip strong { color: var(--accent); }
+    .section.burn { border: 1px solid rgba(74, 222, 128, 0.2); }
     .mini-stat {
       background: var(--surface); border-radius: var(--radius);
       padding: 0.4rem 0.3rem; text-align: center; box-shadow: var(--shadow);
@@ -303,21 +312,27 @@
         <span class="drag-handle">⋮⋮</span>
         <div class="inline-stats">
           <div class="mini-stat cal">
-            <div class="lbl">Cal <button type="button" class="info-btn" data-info="cal">ⓘ</button></div>
+            <div class="lbl">กิน <button type="button" class="info-btn" data-info="cal">ⓘ</button></div>
             <div class="val" id="totalCal">0</div>
             <div class="sub" id="calSub">kcal</div>
           </div>
           <div class="mini-stat prot" id="protCard">
-            <div class="lbl">Prot <button type="button" class="info-btn" data-info="prot">ⓘ</button> <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0;border:none;background:none;font-size:0.55rem">✎</button></div>
-            <div class="val" id="totalProt">0</div>
-            <div class="sub" id="protSub">/ —g</div>
+            <div class="lbl">Prot <button type="button" class="info-btn" data-info="prot">ⓘ</button></div>
+            <div class="val" id="protRemain">0</div>
+            <div class="sub" id="protSub">ขาด —g</div>
           </div>
           <div class="mini-stat bal" id="balanceCard">
             <div class="lbl">Bal <button type="button" class="info-btn" data-info="balance">ⓘ</button></div>
             <div class="val" id="balance">0</div>
-            <div class="sub">kcal</div>
+            <div class="sub" id="balSub">kcal</div>
+          </div>
+          <div class="mini-stat burn">
+            <div class="lbl">เผา <button type="button" class="info-btn" data-info="bsum">ⓘ</button></div>
+            <div class="val sm" id="bsumVal">0</div>
+            <div class="sub" id="bsumSub">kcal</div>
           </div>
         </div>
+        <div class="bsum-strip" id="bsumStrip">BMR — + ออกกำลัง —</div>
       </div>
 
       <div class="sortable-block" data-block-id="meals">
@@ -334,6 +349,21 @@
           <p class="hint">450,30 · ☆=เทมเพลต · แตะมื้อเพื่อแก้ไข</p>
           <ul class="meal-list" id="mealList"></ul>
           <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ</p>
+        </section>
+      </div>
+      <div class="sortable-block" data-block-id="exercises">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section burn">
+          <div class="section-title">ออกกำลังกาย (<span id="exerciseCount">0</span>/5)</div>
+          <div class="meal-add-row">
+            <input type="number" id="exerciseKcal" placeholder="kcal" inputmode="numeric" min="0" style="width:58px;flex:none">
+            <input type="text" id="exerciseNote" placeholder="โน้ต เช่น วิ่ง" style="flex:1">
+            <input type="time" id="exerciseTime">
+            <button type="button" class="btn" id="btnAddExercise" style="width:30px;padding:0;background:var(--success);color:#0f172a">+</button>
+          </div>
+          <p class="hint">แคลอรี่เผา · โน้ต · แตะรายการเพื่อแก้ไข</p>
+          <ul class="meal-list" id="exerciseList"></ul>
+          <p class="empty-meals" id="emptyExercises">ยังไม่มี — วันไม่ออกกำลังกายก็ได้</p>
         </section>
       </div>
 
@@ -384,6 +414,10 @@
               <canvas class="chart-canvas" id="chartProt" data-chart="prot"></canvas>
             </div>
             <div class="chart-item">
+              <div class="chart-item-label"><span>เบิร์นออกกำลัง (kcal)</span></div>
+              <canvas class="chart-canvas" id="chartBurn" data-chart="burn"></canvas>
+            </div>
+            <div class="chart-item">
               <div class="chart-item-label"><span>Balance (kcal) <button type="button" class="info-btn" data-info="balance">ⓘ</button></span></div>
               <canvas class="chart-canvas" id="chartBalance" data-chart="balance"></canvas>
             </div>
@@ -399,22 +433,11 @@
             <span class="chevron">▼</span>
           </div>
           <div class="section-body" style="margin-top:0.5rem">
-            <div class="field-row">
-              <div class="field">
-                <label for="exerciseBurn">Exercise kcal</label>
-                <input type="number" id="exerciseBurn" inputmode="numeric" min="0" placeholder="0">
-              </div>
-              <div class="field">
-                <label for="weightLoss">Est. kg <button type="button" class="info-btn" data-info="loss">ⓘ</button></label>
-                <input type="text" id="weightLoss" readonly style="opacity:0.7">
-              </div>
-            </div>
             <div class="field">
-              <label for="workoutProgram">Workout</label>
-              <textarea id="workoutProgram" rows="2"></textarea>
+              <label for="weightLoss">Est. ลดน้ำหนักวันนี้ (kg) <button type="button" class="info-btn" data-info="loss">ⓘ</button></label>
+              <input type="text" id="weightLoss" readonly style="opacity:0.7">
             </div>
             <div class="bmr-note" id="bsumNote"></div>
-            <button type="button" class="info-btn" data-info="bsum" style="margin-top:0.35rem;font-size:0.65rem">ⓘ อธิบายสูตรคำนวณ</button>
           </div>
         </section>
       </div>
@@ -447,6 +470,19 @@
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelEdit">ยกเลิก</button>
         <button type="button" class="btn" id="btnSaveEdit">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="editExerciseOverlay">
+    <div class="edit-sheet">
+      <h3>แก้ไขออกกำลังกาย</h3>
+      <div class="field"><label for="editExerciseKcal">แคลอรี่เผา (kcal)</label><input type="number" id="editExerciseKcal" min="0"></div>
+      <div class="field"><label for="editExerciseNote">โน้ต</label><input type="text" id="editExerciseNote"></div>
+      <div class="field"><label for="editExerciseTime">เวลา</label><input type="time" id="editExerciseTime"></div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelEditEx">ยกเลิก</button>
+        <button type="button" class="btn" id="btnSaveEditEx">บันทึก</button>
       </div>
     </div>
   </div>
@@ -507,6 +543,7 @@
     const STORAGE_PREFIX = 'calorieTracker:';
     const SETTINGS_KEY = 'calorieTracker:settings';
     const MAX_MEALS = 7;
+    const MAX_EXERCISES = 5;
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
@@ -517,13 +554,13 @@
       { days: 30, label: '30d' }, { days: 90, label: '3m' }, { days: 180, label: '6m' }, { days: 365, label: '12m' },
     ];
 
-    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'charts', 'profile', 'daily', 'data'];
+    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'exercises', 'profile', 'charts', 'daily', 'data'];
 
     const INFO_TEXTS = {
-      cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้'], ['เป้าหมาย', 'ขาดแคล (Balance ติดลบ) = เหมาะกับการลดน้ำหนัก']] },
-      prot: { title: 'โปรตีน', body: [['Total Protein', 'ผลรวมโปรตีนจากทุกมื้อ'], ['เป้าหมาย', 'น้ำหนัก (kg) × ตัวคูณ (ค่าเริ่ม 1.55)'], ['สีแดง', 'กินไม่ถึงเป้า — ต้องโฟกัส']] },
-      balance: { title: 'Balance (Deficit)', body: [['สูตร', 'Balance = Total Cal − Bsum'], ['Bsum', 'พลังงานที่ใช้ต่อวัน (BMR + ออกกำลังกาย)'], ['ติดลบ (−)', 'ขาดแคลอรี่ = ดีสำหรับลดน้ำหนัก'], ['ติดบวก (+)', 'กินเกินพลังงานที่ใช้']] },
-      bsum: { title: 'Bsum & BMR', body: [['BMR', 'น้ำหนัก (kg) × ' + BMR_MULTIPLIER + ' = พลังงานพื้นฐาน'], ['Bsum', 'BMR + Exercise Burn (kcal)'], ['Balance', 'Total Cal − Bsum']] },
+      cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้ — ยังไม่กิน = 0'], ['เป้าหมาย', 'กินเข้าไปเพื่อลดขาดแคล (Balance)']] },
+      prot: { title: 'โปรตีน (คงเหลือ)', body: [['เริ่มวัน', 'ติดลบตามเป้า (ยังไม่กิน)'], ['สูตร', 'กินรวม − เป้า (น้ำหนัก × ตัวคูณ)'], ['ติดลบ', 'ยังขาดอีก — ต้องกินเพิ่ม'], ['ติดบวก', 'ถึงหรือเกินเป้าแล้ว'], ['สีแดง', 'ยังขาดโปรตีน']] },
+      balance: { title: 'Balance (Deficit)', body: [['เริ่มวัน', 'ติดลบตาม Bsum (ยังไม่กิน)'], ['สูตร', 'Balance = แคลอรี่กิน − Bsum'], ['กินเข้า', 'Balance ค่อย ๆ ขึ้นใกล้ 0 หรือบวก'], ['ติดลบ (−)', 'ขาดแคล = ดีสำหรับลดน้ำหนัก'], ['ติดบวก (+)', 'กินเกินพลังงานที่ใช้']] },
+      bsum: { title: 'เผา (Bsum)', body: [['BMR', 'น้ำหนัก (kg) × ' + BMR_MULTIPLIER + ' = พลังงานพื้นฐาน'], ['ออกกำลัง', 'ผลรวม kcal จากรายการออกกำลังกาย'], ['Bsum', 'BMR + ออกกำลัง = โควตาเผาต่อวัน'], ['Balance', 'แคลอรี่กิน − Bsum']] },
       loss: { title: 'Weight Loss Estimate', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal'], ['ติดลบ', 'ประมาณการลดน้ำหนักในวันนั้น']] },
     };
 
@@ -537,6 +574,7 @@
 
     let currentDate = todayStr();
     let editingMealId = null;
+    let editingExerciseId = null;
     let dragState = null;
 
     const $ = (s) => document.querySelector(s);
@@ -546,17 +584,23 @@
       periodGrid: $('#periodGrid'),
       datePicker: $('#datePicker'), dateLabel: $('#dateLabel'),
       btnPrevDay: $('#btnPrevDay'), btnNextDay: $('#btnNextDay'),
-      totalCal: $('#totalCal'), totalProt: $('#totalProt'), protCard: $('#protCard'), protSub: $('#protSub'),
-      calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'),
+      totalCal: $('#totalCal'), protRemain: $('#protRemain'), protCard: $('#protCard'), protSub: $('#protSub'),
+      calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'), balSub: $('#balSub'),
+      bsumVal: $('#bsumVal'), bsumSub: $('#bsumSub'), bsumStrip: $('#bsumStrip'),
       weightLoss: $('#weightLoss'), bsumNote: $('#bsumNote'),
       profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
-      exerciseBurn: $('#exerciseBurn'), workoutProgram: $('#workoutProgram'),
+      exerciseKcal: $('#exerciseKcal'), exerciseNote: $('#exerciseNote'), exerciseTime: $('#exerciseTime'),
+      btnAddExercise: $('#btnAddExercise'), exerciseList: $('#exerciseList'),
+      exerciseCount: $('#exerciseCount'), emptyExercises: $('#emptyExercises'),
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
       chartPeriodBtns: $('#chartPeriodBtns'),
       chartWeight: $('#chartWeight'), chartCal: $('#chartCal'),
-      chartProt: $('#chartProt'), chartBalance: $('#chartBalance'),
+      chartProt: $('#chartProt'), chartBurn: $('#chartBurn'), chartBalance: $('#chartBalance'),
+      editExerciseOverlay: $('#editExerciseOverlay'), editExerciseKcal: $('#editExerciseKcal'),
+      editExerciseNote: $('#editExerciseNote'), editExerciseTime: $('#editExerciseTime'),
+      btnCancelEditEx: $('#btnCancelEditEx'), btnSaveEditEx: $('#btnSaveEditEx'),
       weightLogList: $('#weightLogList'),
       editOverlay: $('#editOverlay'), editMealInput: $('#editMealInput'), editMealTime: $('#editMealTime'),
       btnCancelEdit: $('#btnCancelEdit'), btnSaveEdit: $('#btnSaveEdit'),
@@ -565,7 +609,7 @@
       btnSaveWeightHistory: $('#btnSaveWeightHistory'),
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
-      btnEditProtein: $('#btnEditProtein'), btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
+      btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
       btnQuickTemplate: $('#btnQuickTemplate'),
@@ -663,28 +707,57 @@
       return !isNaN(lw) && lw > 0 ? lw : 0;
     }
 
-    function defaultDayData() { return { exerciseBurn: '', workoutProgram: '', meals: [] }; }
+    function defaultDayData() { return { meals: [], exercises: [] }; }
 
     function migrateMeal(m) {
       return { id: m.id || crypto.randomUUID(), calories: m.calories, protein: m.protein, time: m.time || '12:00' };
+    }
+
+    function migrateExercise(e) {
+      return {
+        id: e.id || crypto.randomUUID(),
+        calories: parseFloat(e.calories) || 0,
+        note: e.note || '',
+        time: e.time || '12:00',
+      };
+    }
+
+    function sumExerciseBurn(exercises) {
+      return (exercises || []).reduce((s, e) => s + (parseFloat(e.calories) || 0), 0);
+    }
+
+    function normalizeDayData(data) {
+      let exercises = Array.isArray(data.exercises) ? data.exercises.map(migrateExercise) : [];
+      if (!exercises.length) {
+        const legacyBurn = parseFloat(data.exerciseBurn);
+        if (!isNaN(legacyBurn) && legacyBurn > 0) {
+          exercises = [{
+            id: crypto.randomUUID(),
+            calories: legacyBurn,
+            note: data.workoutProgram || '',
+            time: '12:00',
+          }];
+        }
+      }
+      return {
+        meals: Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [],
+        exercises,
+        _legacyWeight: data.weight ?? '',
+      };
     }
 
     function loadDay(dateStr) {
       try {
         const raw = localStorage.getItem(storageKey(dateStr));
         if (!raw) return defaultDayData();
-        const data = JSON.parse(raw);
-        return {
-          exerciseBurn: data.exerciseBurn ?? '', workoutProgram: data.workoutProgram ?? '',
-          meals: Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [],
-          _legacyWeight: data.weight ?? '',
-        };
+        return normalizeDayData(JSON.parse(raw));
       } catch { return defaultDayData(); }
     }
 
     function saveDay(dateStr, data) {
       localStorage.setItem(storageKey(dateStr), JSON.stringify({
-        exerciseBurn: data.exerciseBurn ?? '', workoutProgram: data.workoutProgram ?? '', meals: data.meals ?? [],
+        meals: data.meals ?? [],
+        exercises: (data.exercises ?? []).map(migrateExercise),
       }));
     }
 
@@ -711,7 +784,7 @@
     }
 
     function getFormData() {
-      return { exerciseBurn: els.exerciseBurn.value, workoutProgram: els.workoutProgram.value, meals: loadDay(currentDate).meals };
+      return loadDay(currentDate);
     }
     function persistForm() { saveDay(currentDate, getFormData()); }
 
@@ -732,13 +805,15 @@
       const totalCal = data.meals.reduce((s, m) => s + m.calories, 0);
       const totalProt = data.meals.reduce((s, m) => s + m.protein, 0);
       const baseBMR = calcBMR(weight);
-      const exercise = parseFloat(data.exerciseBurn) || 0;
+      const exercise = sumExerciseBurn(data.exercises);
       const bsum = baseBMR + exercise;
       const balance = totalCal - bsum;
+      const proteinTarget = getProteinTarget(weight);
+      const proteinRemain = totalProt - proteinTarget;
       return {
         totalCal, totalProt, baseBMR, exercise, bsum, balance,
+        proteinTarget, proteinRemain,
         weightLoss: bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0,
-        proteinTarget: getProteinTarget(weight),
       };
     }
 
@@ -765,20 +840,37 @@
       const r = Math.round(sf);
       return r > 0 ? { text: '↓' + r, cls: 'bad' } : { text: '✓', cls: 'good' };
     }
+    function formatBurn(kg) {
+      if (!kg) return { text: '—', cls: 'neutral' };
+      const r = Math.round(kg * 100) / 100;
+      if (r <= 0) return { text: '—', cls: 'neutral' };
+      return { text: '↓' + r, cls: 'burn' };
+    }
+
+    function dayHasActivity(data) {
+      return data.meals.length > 0 || (data.exercises && data.exercises.length > 0);
+    }
 
     function calcPeriodSummary(endDate, days) {
       const mult = loadSettings().proteinMultiplier;
-      let sw = null, ew = null, tb = 0, tps = 0, dm = 0;
+      let sw = null, ew = null, tb = 0, tps = 0, dm = 0, totalBurnKcal = 0;
       getDateRange(endDate, days).forEach((date) => {
         const data = loadDay(date), w = getWeightOnDate(date), st = calculate(data, w);
+        totalBurnKcal += st.exercise;
         if (w > 0) { if (sw === null) sw = w; ew = w; }
-        if (data.meals.length) {
+        if (dayHasActivity(data)) {
           dm++; tb += st.balance;
           const tgt = w > 0 ? w * mult : (ew || 0) * mult;
           if (tgt > 0 && st.totalProt < tgt) tps += tgt - st.totalProt;
-        } else if (data.exerciseBurn) tb += st.balance;
+        }
       });
-      return { weightChange: sw !== null && ew !== null ? ew - sw : null, totalBalance: tb, totalProteinShortfall: tps, daysWithMeals: dm };
+      return {
+        weightChange: sw !== null && ew !== null ? ew - sw : null,
+        totalBalance: tb,
+        totalProteinShortfall: tps,
+        burnKg: totalBurnKcal / KCAL_PER_KG,
+        daysWithMeals: dm,
+      };
     }
 
     function renderPeriodSummary() {
@@ -787,34 +879,53 @@
       PERIODS.forEach(({ days, label }) => {
         const s = calcPeriodSummary(end, days);
         const w = formatWC(s.weightChange), c = formatBal(s.totalBalance), p = formatProt(s.totalProteinShortfall, s.daysWithMeals);
+        const b = formatBurn(s.burnKg);
         const card = document.createElement('div');
         card.className = 'period-card';
         card.innerHTML = '<div class="period-label">' + label + '</div>'
           + '<div class="period-stat">W<span class="val ' + w.cls + '">' + w.text + '</span></div>'
           + '<div class="period-stat">C<span class="val ' + c.cls + '">' + c.text + '</span></div>'
-          + '<div class="period-stat">P<span class="val ' + p.cls + '">' + p.text + '</span></div>';
+          + '<div class="period-stat">P<span class="val ' + p.cls + '">' + p.text + '</span></div>'
+          + '<div class="period-stat">B<span class="val ' + b.cls + '">' + b.text + '</span></div>';
         els.periodGrid.appendChild(card);
       });
     }
 
     function renderDashboard(st) {
       els.totalCal.textContent = Math.round(st.totalCal);
-      const pr = Math.round(st.totalProt * 10) / 10;
-      els.totalProt.textContent = pr;
+      els.calSub.textContent = 'kcal กิน';
+
+      const pr = Math.round(st.proteinRemain * 10) / 10;
       if (st.proteinTarget > 0) {
-        els.protSub.textContent = '/ ' + st.proteinTarget + 'g';
-        els.protCard.classList.toggle('bad', pr < st.proteinTarget);
-      } else { els.protSub.textContent = '/ —g'; els.protCard.classList.remove('bad'); }
+        els.protRemain.textContent = (pr > 0 ? '+' : '') + pr;
+        els.protSub.textContent = pr < 0 ? 'ขาด ' + Math.abs(pr) + 'g' : pr > 0 ? 'เกิน ' + pr + 'g' : 'ถึงเป้า';
+        els.protCard.classList.toggle('bad', pr < 0);
+      } else {
+        els.protRemain.textContent = '—';
+        els.protSub.textContent = 'ตั้งน้ำหนัก';
+        els.protCard.classList.remove('bad');
+      }
+
       const br = Math.round(st.balance);
       els.balance.textContent = (br > 0 ? '+' : '') + br;
       els.balanceCard.classList.toggle('neg', st.balance < 0);
       els.balanceCard.classList.toggle('pos', st.balance > 0);
-      els.calSub.textContent = st.balance < 0 ? 'ขาด' + Math.abs(br) : st.balance > 0 ? 'เกิน' + br : 'kcal';
-      els.weightLoss.value = (st.weightLoss >= 0 ? '+' : '') + (Math.round(st.weightLoss * 1000) / 1000);
+      els.balSub.textContent = st.balance < 0 ? 'ขาด ' + Math.abs(br) : st.balance > 0 ? 'เกิน ' + br : 'พอดี';
+
+      els.bsumVal.textContent = Math.round(st.bsum);
+      els.bsumSub.textContent = 'kcal เผา';
+
       const w = getWeightOnDate(currentDate);
-      els.bsumNote.innerHTML = w > 0
-        ? 'Bsum <strong>' + Math.round(st.bsum) + '</strong> = BMR ' + Math.round(st.baseBMR) + ' + ออกกำลัง ' + Math.round(st.exercise)
-        : 'กรอกน้ำหนักเพื่อคำนวณ BMR';
+      if (w > 0) {
+        const exPart = st.exercise > 0 ? ' + ออกกำลัง <strong>' + Math.round(st.exercise) + '</strong>' : '';
+        els.bsumStrip.innerHTML = 'BMR <strong>' + Math.round(st.baseBMR) + '</strong>' + exPart + ' = เผารวม <strong>' + Math.round(st.bsum) + '</strong> kcal';
+        els.bsumNote.innerHTML = els.bsumStrip.innerHTML;
+      } else {
+        els.bsumStrip.textContent = 'กรอกน้ำหนักเพื่อคำนวณ BMR';
+        els.bsumNote.textContent = 'กรอกน้ำหนักเพื่อคำนวณ BMR';
+      }
+
+      els.weightLoss.value = (st.weightLoss >= 0 ? '+' : '') + (Math.round(st.weightLoss * 1000) / 1000);
     }
 
     function renderMeals(meals) {
@@ -889,10 +1000,28 @@
       ctx.stroke();
     }
 
+    function renderExercises(exercises) {
+      els.exerciseCount.textContent = exercises.length;
+      els.btnAddExercise.disabled = exercises.length >= MAX_EXERCISES;
+      els.emptyExercises.style.display = exercises.length ? 'none' : 'block';
+      els.exerciseList.innerHTML = '';
+      [...exercises].sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((ex) => {
+        const li = document.createElement('li');
+        li.className = 'meal-item';
+        li.dataset.id = ex.id;
+        const note = ex.note ? ' · ' + ex.note : '';
+        li.innerHTML = '<div class="meal-info" data-action="edit-ex" data-id="' + ex.id + '"><div class="meal-nums">' + Math.round(ex.calories) + ' kcal</div>'
+          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(ex.time) + note + '</div></div>'
+          + '<div class="meal-actions"><button type="button" class="btn btn-ghost btn-icon" data-action="edit-ex" data-id="' + ex.id + '">✎</button>'
+          + '<button type="button" class="btn btn-danger btn-icon" data-action="delete-ex" data-id="' + ex.id + '">✕</button></div>';
+        els.exerciseList.appendChild(li);
+      });
+    }
+
     function renderCharts() {
       const end = currentDate <= todayStr() ? currentDate : todayStr();
       const dates = getChartDateRange(end, chartPeriodDays);
-      const wPts = [], calPts = [], protPts = [], balPts = [];
+      const wPts = [], calPts = [], protPts = [], burnPts = [], balPts = [];
       dates.forEach((d) => {
         const w = getWeightOnDate(d);
         const data = loadDay(d);
@@ -902,11 +1031,13 @@
           calPts.push({ v: st.totalCal });
           protPts.push({ v: st.totalProt });
         }
-        if (data.meals.length || data.exerciseBurn) balPts.push({ v: st.balance });
+        if (st.exercise > 0) burnPts.push({ v: st.exercise });
+        if (w > 0 || dayHasActivity(data)) balPts.push({ v: st.balance });
       });
       drawLineChart(els.chartWeight, wPts, '--accent');
       drawLineChart(els.chartCal, calPts, '--warning');
       drawLineChart(els.chartProt, protPts, '--protein');
+      drawLineChart(els.chartBurn, burnPts, '--success');
       drawLineChart(els.chartBalance, balPts, '--warning', { zeroLine: true });
     }
 
@@ -1084,10 +1215,9 @@
       els.profileAge.value = profile.age;
       els.profileWaist.value = profile.waist;
       const data = loadDay(currentDate);
-      els.exerciseBurn.value = data.exerciseBurn;
-      els.workoutProgram.value = data.workoutProgram;
       const w = getWeightOnDate(currentDate);
       renderMeals(data.meals);
+      renderExercises(data.exercises);
       renderDashboard(calculate(data, w));
       renderPeriodSummary();
       renderTemplates();
@@ -1100,6 +1230,7 @@
       els.dateLabel.textContent = formatDateLabel(d);
       els.btnNextDay.disabled = d >= todayStr();
       els.mealTime.value = nowTimeStr();
+      els.exerciseTime.value = nowTimeStr();
       refresh();
     }
 
@@ -1107,9 +1238,9 @@
       const data = loadDay(currentDate);
       if (data.meals.length >= MAX_MEALS) { showToast('สูงสุด ' + MAX_MEALS + ' มื้อ', 'error'); return; }
       data.meals.push({ id: crypto.randomUUID(), calories: cal, protein: prot, time: time || nowTimeStr() });
-      saveDay(currentDate, { ...getFormData(), meals: data.meals });
-      const st = calculate({ ...data, meals: data.meals }, getWeightOnDate(currentDate));
-      if (st.proteinTarget > 0 && st.totalProt >= st.proteinTarget) {
+      saveDay(currentDate, data);
+      const st = calculate(data, getWeightOnDate(currentDate));
+      if (st.proteinTarget > 0 && st.proteinRemain >= 0) {
         if (navigator.vibrate) navigator.vibrate(50);
         showToast('ถึงเป้าโปรตีน! 🎉', 'success');
       }
@@ -1125,7 +1256,7 @@
     function deleteMeal(id) {
       const data = loadDay(currentDate);
       data.meals = data.meals.filter((m) => m.id !== id);
-      saveDay(currentDate, { ...getFormData(), meals: data.meals }); refresh();
+      saveDay(currentDate, data); refresh();
     }
 
     function openEdit(id) {
@@ -1144,7 +1275,51 @@
       const m = data.meals.find((x) => x.id === editingMealId);
       if (!m) { closeEdit(); return; }
       Object.assign(m, p, { time: els.editMealTime.value || '12:00' });
-      saveDay(currentDate, { ...getFormData(), meals: data.meals }); closeEdit(); refresh();
+      saveDay(currentDate, data); closeEdit(); refresh();
+    }
+
+    function handleAddExercise() {
+      const kcal = parseFloat(els.exerciseKcal.value);
+      if (isNaN(kcal) || kcal <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
+      const data = loadDay(currentDate);
+      if (data.exercises.length >= MAX_EXERCISES) { showToast('สูงสุด ' + MAX_EXERCISES + ' รายการ', 'error'); return; }
+      data.exercises.push({
+        id: crypto.randomUUID(),
+        calories: kcal,
+        note: els.exerciseNote.value.trim(),
+        time: els.exerciseTime.value || nowTimeStr(),
+      });
+      saveDay(currentDate, data);
+      els.exerciseKcal.value = ''; els.exerciseNote.value = ''; els.exerciseTime.value = nowTimeStr();
+      refresh();
+    }
+
+    function deleteExercise(id) {
+      const data = loadDay(currentDate);
+      data.exercises = data.exercises.filter((e) => e.id !== id);
+      saveDay(currentDate, data); refresh();
+    }
+
+    function openEditExercise(id) {
+      const ex = loadDay(currentDate).exercises.find((x) => x.id === id);
+      if (!ex) return;
+      editingExerciseId = id;
+      els.editExerciseKcal.value = ex.calories;
+      els.editExerciseNote.value = ex.note || '';
+      els.editExerciseTime.value = ex.time || '12:00';
+      els.editExerciseOverlay.classList.add('open');
+    }
+    function closeEditExercise() { editingExerciseId = null; els.editExerciseOverlay.classList.remove('open'); }
+    function saveEditExercise() {
+      const kcal = parseFloat(els.editExerciseKcal.value);
+      if (isNaN(kcal) || kcal <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
+      const data = loadDay(currentDate);
+      const ex = data.exercises.find((x) => x.id === editingExerciseId);
+      if (!ex) { closeEditExercise(); return; }
+      ex.calories = kcal;
+      ex.note = els.editExerciseNote.value.trim();
+      ex.time = els.editExerciseTime.value || '12:00';
+      saveDay(currentDate, data); closeEditExercise(); refresh();
     }
 
     function openSettings() { els.proteinMultiplier.value = loadSettings().proteinMultiplier; renderTemplateEditor(); els.settingsOverlay.classList.add('open'); }
@@ -1165,7 +1340,7 @@
     }
 
     function exportData() {
-      const payload = { version: 3, exportedAt: new Date().toISOString(), data: {} };
+      const payload = { version: 4, exportedAt: new Date().toISOString(), data: {} };
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k?.startsWith(STORAGE_PREFIX)) payload.data[k] = localStorage.getItem(k);
@@ -1205,10 +1380,6 @@
     els.btnNextDay.onclick = () => { const n = shiftDate(currentDate, 1); if (n <= todayStr()) setDate(n); };
     els.datePicker.onchange = () => { const p = els.datePicker.value; if (p && p <= todayStr()) setDate(p); else els.datePicker.value = currentDate; };
 
-    ['exerciseBurn', 'workoutProgram'].forEach((id) => {
-      document.getElementById(id).oninput = () => { persistForm(); renderDashboard(calculate(getFormData(), getWeightOnDate(currentDate))); renderPeriodSummary(); renderCharts(); };
-    });
-
     els.profileWeight.oninput = () => {
       const w = els.profileWeight.value;
       setWeightLogEntry(currentDate, w);
@@ -1221,6 +1392,20 @@
     });
 
     els.btnAddMeal.onclick = handleAddMeal;
+    els.btnAddExercise.onclick = handleAddExercise;
+    els.exerciseKcal.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddExercise(); } };
+    els.exerciseList.onclick = (e) => {
+      if (e.target.closest('[data-action="delete-ex"]')) {
+        e.stopPropagation();
+        deleteExercise(e.target.closest('[data-action="delete-ex"]').dataset.id);
+        return;
+      }
+      const editBtn = e.target.closest('[data-action="edit-ex"]');
+      if (editBtn) openEditExercise(editBtn.dataset.id);
+    };
+    els.btnCancelEditEx.onclick = closeEditExercise;
+    els.btnSaveEditEx.onclick = saveEditExercise;
+    els.editExerciseOverlay.onclick = (e) => { if (e.target === els.editExerciseOverlay) closeEditExercise(); };
     els.btnQuickTemplate.onclick = openQuickTemplate;
     els.btnCancelQuickTpl.onclick = () => els.quickTemplateOverlay.classList.remove('open');
     els.btnSaveQuickTpl.onclick = saveQuickTemplate;
@@ -1262,7 +1447,6 @@
     };
     els.weightHistoryOverlay.onclick = (e) => { if (e.target === els.weightHistoryOverlay) els.weightHistoryOverlay.classList.remove('open'); };
 
-    els.btnEditProtein.onclick = openSettings;
     els.btnSettings.onclick = openSettings;
     els.btnCancelSettings.onclick = closeSettings;
     els.btnSaveSettings.onclick = saveAllSettings;
@@ -1287,6 +1471,7 @@
     initDragReorder();
     setChartPeriod(loadSettings().chartPeriodDays || 30);
     els.mealTime.value = nowTimeStr();
+    els.exerciseTime.value = nowTimeStr();
     setDate(todayStr());
   </script>
 </body>
