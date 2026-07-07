@@ -2,7 +2,7 @@
 <html lang="th" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <title>Calorie & Protein Tracker</title>
   <style>
@@ -22,7 +22,11 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg); color: var(--text); line-height: 1.4;
       min-height: 100dvh; padding-bottom: calc(1rem + var(--safe-bottom));
+      touch-action: manipulation;
     }
+    input, select, textarea { font-size: 16px; }
+    .btn-sm, .btn-icon, .btn-tpl-save, .period-pill, .chip, .info-btn, .drag-handle { font-size: 0.72rem; }
+    .btn { font-size: 0.82rem; }
     .app { max-width: 480px; margin: 0 auto; padding: 0.65rem; }
     .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
     .top-bar h1 { font-size: 1.1rem; font-weight: 700; }
@@ -179,11 +183,42 @@
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
     .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
 
-    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.4rem; }
-    .mini-chart {
-      width: 100%; height: 64px; border-radius: 8px; background: var(--bg);
+    .info-btn {
+      background: none; border: none; color: var(--muted); font-size: 0.55rem;
+      padding: 0 0.15rem; cursor: pointer; vertical-align: middle; line-height: 1;
     }
-    .chart-label { font-size: 0.58rem; color: var(--muted); text-align: center; margin-top: 0.15rem; }
+    .info-btn:active { color: var(--accent); }
+
+    .btn-tpl-save {
+      width: 30px; height: 30px; padding: 0; font-size: 0.72rem; flex-shrink: 0;
+      background: var(--surface-2); color: var(--muted); border: none; border-radius: 7px;
+    }
+    .btn-tpl-save:active { color: var(--accent); }
+
+    .chart-period-btns { display: flex; gap: 2px; margin-bottom: 0.4rem; }
+    .period-pill {
+      flex: 1; min-width: 0; padding: 0.22rem 0.1rem; font-size: 0.55rem; font-weight: 600;
+      border-radius: 5px; border: 1px solid var(--surface-2); background: var(--bg);
+      color: var(--muted); cursor: pointer; text-align: center;
+    }
+    .period-pill.active { background: var(--accent-dim); color: #0f172a; border-color: transparent; }
+
+    .chart-stack { display: flex; flex-direction: column; gap: 0.35rem; }
+    .chart-item-label {
+      font-size: 0.55rem; color: var(--muted); margin-bottom: 0.08rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .chart-canvas {
+      width: 100%; height: 52px; border-radius: 6px; background: var(--bg); display: block;
+    }
+
+    .info-body { font-size: 0.78rem; line-height: 1.55; color: var(--text); }
+    .info-body dt { font-weight: 600; color: var(--accent); margin-top: 0.5rem; }
+    .info-body dt:first-child { margin-top: 0; }
+    .info-body dd { color: var(--muted); margin-left: 0; margin-top: 0.15rem; }
+
+    .meal-item { cursor: pointer; }
+    .meal-item .meal-actions { cursor: default; }
 
     .weight-log-list { list-style: none; max-height: 50dvh; overflow-y: auto; }
     .weight-log-item {
@@ -268,17 +303,17 @@
         <span class="drag-handle">⋮⋮</span>
         <div class="inline-stats">
           <div class="mini-stat cal">
-            <div class="lbl">Cal</div>
+            <div class="lbl">Cal <button type="button" class="info-btn" data-info="cal">ⓘ</button></div>
             <div class="val" id="totalCal">0</div>
             <div class="sub" id="calSub">kcal</div>
           </div>
           <div class="mini-stat prot" id="protCard">
-            <div class="lbl">Prot <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0;border:none;background:none;font-size:0.55rem">✎</button></div>
+            <div class="lbl">Prot <button type="button" class="info-btn" data-info="prot">ⓘ</button> <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0;border:none;background:none;font-size:0.55rem">✎</button></div>
             <div class="val" id="totalProt">0</div>
             <div class="sub" id="protSub">/ —g</div>
           </div>
           <div class="mini-stat bal" id="balanceCard">
-            <div class="lbl">Bal</div>
+            <div class="lbl">Bal <button type="button" class="info-btn" data-info="balance">ⓘ</button></div>
             <div class="val" id="balance">0</div>
             <div class="sub">kcal</div>
           </div>
@@ -293,9 +328,10 @@
           <div class="meal-add-row">
             <input type="text" id="mealInput" placeholder="Cal,Protein" autocomplete="off">
             <input type="time" id="mealTime">
-            <button type="button" class="btn" id="btnAddMeal">+</button>
+            <button type="button" class="btn-tpl-save" id="btnQuickTemplate" title="บันทึกเป็นเทมเพลต">☆</button>
+            <button type="button" class="btn" id="btnAddMeal" style="width:30px;padding:0">+</button>
           </div>
-          <p class="hint">450,30 · เวลา = ตอนนี้</p>
+          <p class="hint">450,30 · ☆=เทมเพลต · แตะมื้อเพื่อแก้ไข</p>
           <ul class="meal-list" id="mealList"></ul>
           <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ</p>
         </section>
@@ -320,9 +356,37 @@
             </div>
           </div>
           <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก</button>
-          <div class="chart-row">
-            <div><canvas class="mini-chart" id="weightChart"></canvas><div class="chart-label">น้ำหนัก 30วัน</div></div>
-            <div><canvas class="mini-chart" id="balanceChart"></canvas><div class="chart-label">Balance 30วัน</div></div>
+        </section>
+      </div>
+
+      <div class="sortable-block" data-block-id="charts">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section">
+          <div class="section-title">กราฟ</div>
+          <div class="chart-period-btns" id="chartPeriodBtns">
+            <button type="button" class="period-pill active" data-days="30">30D</button>
+            <button type="button" class="period-pill" data-days="90">3M</button>
+            <button type="button" class="period-pill" data-days="180">6M</button>
+            <button type="button" class="period-pill" data-days="365">1Y</button>
+            <button type="button" class="period-pill" data-days="0">ALL</button>
+          </div>
+          <div class="chart-stack">
+            <div class="chart-item">
+              <div class="chart-item-label"><span>น้ำหนัก (kg)</span></div>
+              <canvas class="chart-canvas" id="chartWeight" data-chart="weight"></canvas>
+            </div>
+            <div class="chart-item">
+              <div class="chart-item-label"><span>แคลอรี่ (kcal)</span></div>
+              <canvas class="chart-canvas" id="chartCal" data-chart="cal"></canvas>
+            </div>
+            <div class="chart-item">
+              <div class="chart-item-label"><span>โปรตีน (g)</span></div>
+              <canvas class="chart-canvas" id="chartProt" data-chart="prot"></canvas>
+            </div>
+            <div class="chart-item">
+              <div class="chart-item-label"><span>Balance (kcal) <button type="button" class="info-btn" data-info="balance">ⓘ</button></span></div>
+              <canvas class="chart-canvas" id="chartBalance" data-chart="balance"></canvas>
+            </div>
           </div>
         </section>
       </div>
@@ -341,7 +405,7 @@
                 <input type="number" id="exerciseBurn" inputmode="numeric" min="0" placeholder="0">
               </div>
               <div class="field">
-                <label for="weightLoss">Est. kg</label>
+                <label for="weightLoss">Est. kg <button type="button" class="info-btn" data-info="loss">ⓘ</button></label>
                 <input type="text" id="weightLoss" readonly style="opacity:0.7">
               </div>
             </div>
@@ -350,6 +414,7 @@
               <textarea id="workoutProgram" rows="2"></textarea>
             </div>
             <div class="bmr-note" id="bsumNote"></div>
+            <button type="button" class="info-btn" data-info="bsum" style="margin-top:0.35rem;font-size:0.65rem">ⓘ อธิบายสูตรคำนวณ</button>
           </div>
         </section>
       </div>
@@ -415,6 +480,27 @@
     </div>
   </div>
 
+  <div class="edit-overlay" id="quickTemplateOverlay">
+    <div class="edit-sheet">
+      <h3>บันทึกเทมเพลต</h3>
+      <p class="sheet-desc">ทางลัด — ไม่ต้องเข้า Settings</p>
+      <div class="field"><label for="quickTemplateName">ชื่อ</label><input type="text" id="quickTemplateName" placeholder="เช่น ข้าว+ไก่"></div>
+      <div class="field"><label for="quickTemplateVal">Cal,Protein</label><input type="text" id="quickTemplateVal" placeholder="450,30"></div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelQuickTpl">ยกเลิก</button>
+        <button type="button" class="btn" id="btnSaveQuickTpl">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="infoOverlay">
+    <div class="edit-sheet">
+      <h3 id="infoTitle">สูตรคำนวณ</h3>
+      <dl class="info-body" id="infoBody"></dl>
+      <div class="edit-actions"><button type="button" class="btn btn-ghost" id="btnCloseInfo" style="flex:1">ปิด</button></div>
+    </div>
+  </div>
+
   <div class="toast error" id="toast"></div>
 
   <script>
@@ -431,7 +517,17 @@
       { days: 30, label: '30d' }, { days: 90, label: '3m' }, { days: 180, label: '6m' }, { days: 365, label: '12m' },
     ];
 
-    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'profile', 'daily', 'data'];
+    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'charts', 'profile', 'daily', 'data'];
+
+    const INFO_TEXTS = {
+      cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้'], ['เป้าหมาย', 'ขาดแคล (Balance ติดลบ) = เหมาะกับการลดน้ำหนัก']] },
+      prot: { title: 'โปรตีน', body: [['Total Protein', 'ผลรวมโปรตีนจากทุกมื้อ'], ['เป้าหมาย', 'น้ำหนัก (kg) × ตัวคูณ (ค่าเริ่ม 1.55)'], ['สีแดง', 'กินไม่ถึงเป้า — ต้องโฟกัส']] },
+      balance: { title: 'Balance (Deficit)', body: [['สูตร', 'Balance = Total Cal − Bsum'], ['Bsum', 'พลังงานที่ใช้ต่อวัน (BMR + ออกกำลังกาย)'], ['ติดลบ (−)', 'ขาดแคลอรี่ = ดีสำหรับลดน้ำหนัก'], ['ติดบวก (+)', 'กินเกินพลังงานที่ใช้']] },
+      bsum: { title: 'Bsum & BMR', body: [['BMR', 'น้ำหนัก (kg) × ' + BMR_MULTIPLIER + ' = พลังงานพื้นฐาน'], ['Bsum', 'BMR + Exercise Burn (kcal)'], ['Balance', 'Total Cal − Bsum']] },
+      loss: { title: 'Weight Loss Estimate', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal'], ['ติดลบ', 'ประมาณการลดน้ำหนักในวันนั้น']] },
+    };
+
+    let chartPeriodDays = 30;
 
     const DEFAULT_TEMPLATES = [
       { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
@@ -458,7 +554,9 @@
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
-      weightChart: $('#weightChart'), balanceChart: $('#balanceChart'),
+      chartPeriodBtns: $('#chartPeriodBtns'),
+      chartWeight: $('#chartWeight'), chartCal: $('#chartCal'),
+      chartProt: $('#chartProt'), chartBalance: $('#chartBalance'),
       weightLogList: $('#weightLogList'),
       editOverlay: $('#editOverlay'), editMealInput: $('#editMealInput'), editMealTime: $('#editMealTime'),
       btnCancelEdit: $('#btnCancelEdit'), btnSaveEdit: $('#btnSaveEdit'),
@@ -470,6 +568,12 @@
       btnEditProtein: $('#btnEditProtein'), btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
+      btnQuickTemplate: $('#btnQuickTemplate'),
+      quickTemplateOverlay: $('#quickTemplateOverlay'),
+      quickTemplateName: $('#quickTemplateName'), quickTemplateVal: $('#quickTemplateVal'),
+      btnCancelQuickTpl: $('#btnCancelQuickTpl'), btnSaveQuickTpl: $('#btnSaveQuickTpl'),
+      infoOverlay: $('#infoOverlay'), infoTitle: $('#infoTitle'), infoBody: $('#infoBody'),
+      btnCloseInfo: $('#btnCloseInfo'),
       toast: $('#toast'),
     };
 
@@ -492,6 +596,7 @@
       return {
         proteinMultiplier: DEFAULT_PROTEIN_MULT, theme: 'dark',
         sectionOrder: [...DEFAULT_BLOCK_ORDER],
+        chartPeriodDays: 30,
         templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
         profile: { weight: '', age: '', waist: '', weightLog: {} },
       };
@@ -509,6 +614,7 @@
           proteinMultiplier: parseFloat(s.proteinMultiplier) || DEFAULT_PROTEIN_MULT,
           theme: s.theme === 'light' ? 'light' : 'dark',
           sectionOrder: merged,
+          chartPeriodDays: s.chartPeriodDays || 30,
           templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
           profile: {
             weight: s.profile?.weight ?? '',
@@ -719,27 +825,61 @@
       [...meals].sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((m) => {
         const li = document.createElement('li');
         li.className = 'meal-item';
-        li.innerHTML = '<div class="meal-info"><div class="meal-nums">' + Math.round(m.calories) + ' · ' + m.protein + 'g</div>'
-          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(m.time) + '</div></div>'
-          + '<div><button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + m.id + '">✎</button>'
+        li.dataset.id = m.id;
+        li.innerHTML = '<div class="meal-info" data-action="edit" data-id="' + m.id + '"><div class="meal-nums">' + Math.round(m.calories) + ' · ' + m.protein + 'g</div>'
+          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(m.time) + ' · แตะเพื่อแก้ไข</div></div>'
+          + '<div class="meal-actions"><button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + m.id + '">✎</button>'
           + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + m.id + '">✕</button></div>';
         els.mealList.appendChild(li);
       });
     }
 
-    function drawLineChart(canvas, points, colorVar) {
+    function getChartDateRange(endDate, days) {
+      if (days === 0) {
+        const dates = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
+          const d = key.slice(STORAGE_PREFIX.length);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d <= endDate) dates.push(d);
+        }
+        const logDates = Object.keys(getWeightLog()).filter((d) => d <= endDate);
+        logDates.forEach((d) => { if (!dates.includes(d)) dates.push(d); });
+        dates.sort();
+        if (!dates.length) return getDateRange(endDate, 30);
+        const first = dates[0];
+        const span = Math.ceil((new Date(endDate) - new Date(first)) / 86400000) + 1;
+        return getDateRange(endDate, Math.min(span, 999));
+      }
+      return getDateRange(endDate, days);
+    }
+
+    function drawLineChart(canvas, points, colorVar, opts) {
+      opts = opts || {};
       const ctx = canvas.getContext('2d');
       const dpr = window.devicePixelRatio || 1;
       const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return;
       canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
-      if (points.length < 2) {
+      if (points.length < 1) {
         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
         ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('ข้อมูลไม่พอ', w / 2, h / 2); return;
+        ctx.fillText('ไม่มีข้อมูล', w / 2, h / 2); return;
       }
       const vals = points.map((p) => p.v);
-      const min = Math.min(...vals), max = Math.max(...vals), range = max - min || 1, pad = 6;
+      let min = Math.min(...vals), max = Math.max(...vals);
+      if (opts.zeroLine) { min = Math.min(min, 0); max = Math.max(max, 0); }
+      const range = max - min || 1, pad = 5;
       const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+      if (opts.zeroLine && min < 0 && max > 0) {
+        const zy = h - pad - ((0 - min) / range) * (h - pad * 2);
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+        ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(pad, zy); ctx.lineTo(w - pad, zy); ctx.stroke();
+      }
+      if (points.length < 2) {
+        const x = w / 2, y = h - pad - ((vals[0] - min) / range) * (h - pad * 2);
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); return;
+      }
       ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
       points.forEach((p, i) => {
         const x = pad + (i / (points.length - 1)) * (w - pad * 2);
@@ -751,16 +891,32 @@
 
     function renderCharts() {
       const end = currentDate <= todayStr() ? currentDate : todayStr();
-      const dates = getDateRange(end, 30);
-      const wPts = [], bPts = [];
+      const dates = getChartDateRange(end, chartPeriodDays);
+      const wPts = [], calPts = [], protPts = [], balPts = [];
       dates.forEach((d) => {
         const w = getWeightOnDate(d);
-        if (w > 0) wPts.push({ v: w });
         const data = loadDay(d);
-        if (data.meals.length || data.exerciseBurn) bPts.push({ v: calculate(data, w).balance });
+        const st = calculate(data, w);
+        if (w > 0) wPts.push({ v: w });
+        if (data.meals.length) {
+          calPts.push({ v: st.totalCal });
+          protPts.push({ v: st.totalProt });
+        }
+        if (data.meals.length || data.exerciseBurn) balPts.push({ v: st.balance });
       });
-      drawLineChart(els.weightChart, wPts, '--accent');
-      drawLineChart(els.balanceChart, bPts, '--warning');
+      drawLineChart(els.chartWeight, wPts, '--accent');
+      drawLineChart(els.chartCal, calPts, '--warning');
+      drawLineChart(els.chartProt, protPts, '--protein');
+      drawLineChart(els.chartBalance, balPts, '--warning', { zeroLine: true });
+    }
+
+    function setChartPeriod(days) {
+      chartPeriodDays = days;
+      saveSettings({ chartPeriodDays: days });
+      els.chartPeriodBtns.querySelectorAll('.period-pill').forEach((btn) => {
+        btn.classList.toggle('active', parseInt(btn.dataset.days, 10) === days);
+      });
+      renderCharts();
     }
 
     function isWeightAnomaly(date, weight, log) {
@@ -807,6 +963,35 @@
       els.weightHistoryOverlay.classList.remove('open');
       refresh();
       showToast('บันทึกประวัติน้ำหนักแล้ว', 'success');
+    }
+
+    function openQuickTemplate() {
+      const p = parseMealInput(els.mealInput.value);
+      els.quickTemplateVal.value = p ? (p.calories + ',' + p.protein) : els.mealInput.value;
+      els.quickTemplateName.value = '';
+      els.quickTemplateOverlay.classList.add('open');
+      els.quickTemplateName.focus();
+    }
+
+    function saveQuickTemplate() {
+      const p = parseMealInput(els.quickTemplateVal.value);
+      const name = els.quickTemplateName.value.trim();
+      if (!p) { showToast('ใช้ Cal,Protein เช่น 450,30', 'error'); return; }
+      if (!name) { showToast('ใส่ชื่อเทมเพลต', 'error'); return; }
+      const templates = loadSettings().templates;
+      templates.push({ id: 't' + Date.now(), label: name, calories: p.calories, protein: p.protein });
+      saveSettings({ templates });
+      els.quickTemplateOverlay.classList.remove('open');
+      renderTemplates();
+      showToast('บันทึกเทมเพลต "' + name + '"', 'success');
+    }
+
+    function showInfo(key) {
+      const info = INFO_TEXTS[key];
+      if (!info) return;
+      els.infoTitle.textContent = info.title;
+      els.infoBody.innerHTML = info.body.map(([dt, dd]) => '<dt>' + dt + '</dt><dd>' + dd + '</dd>').join('');
+      els.infoOverlay.classList.add('open');
     }
 
     function renderTemplates() {
@@ -1036,12 +1221,33 @@
     });
 
     els.btnAddMeal.onclick = handleAddMeal;
+    els.btnQuickTemplate.onclick = openQuickTemplate;
+    els.btnCancelQuickTpl.onclick = () => els.quickTemplateOverlay.classList.remove('open');
+    els.btnSaveQuickTpl.onclick = saveQuickTemplate;
+    els.quickTemplateOverlay.onclick = (e) => { if (e.target === els.quickTemplateOverlay) els.quickTemplateOverlay.classList.remove('open'); };
+    els.quickTemplateName.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveQuickTemplate(); } };
+
+    document.body.addEventListener('click', (e) => {
+      const infoBtn = e.target.closest('[data-info]');
+      if (infoBtn) { e.preventDefault(); e.stopPropagation(); showInfo(infoBtn.dataset.info); }
+    });
+    els.btnCloseInfo.onclick = () => els.infoOverlay.classList.remove('open');
+    els.infoOverlay.onclick = (e) => { if (e.target === els.infoOverlay) els.infoOverlay.classList.remove('open'); };
+
+    els.chartPeriodBtns.onclick = (e) => {
+      const btn = e.target.closest('.period-pill');
+      if (btn) setChartPeriod(parseInt(btn.dataset.days, 10));
+    };
+
     els.mealInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddMeal(); } };
     els.mealList.onclick = (e) => {
-      const b = e.target.closest('[data-action]');
-      if (!b) return;
-      if (b.dataset.action === 'edit') openEdit(b.dataset.id);
-      if (b.dataset.action === 'delete') deleteMeal(b.dataset.id);
+      if (e.target.closest('[data-action="delete"]')) {
+        e.stopPropagation();
+        deleteMeal(e.target.closest('[data-action="delete"]').dataset.id);
+        return;
+      }
+      const editBtn = e.target.closest('[data-action="edit"]');
+      if (editBtn) openEdit(editBtn.dataset.id);
     };
     els.btnCancelEdit.onclick = closeEdit;
     els.btnSaveEdit.onclick = saveEdit;
@@ -1079,6 +1285,7 @@
     applyTheme(loadSettings().theme);
     applyBlockOrder();
     initDragReorder();
+    setChartPeriod(loadSettings().chartPeriodDays || 30);
     els.mealTime.value = nowTimeStr();
     setDate(todayStr());
   </script>
