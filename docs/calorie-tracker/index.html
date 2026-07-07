@@ -127,6 +127,10 @@
     .mini-stat.prot.bad { border: 1px solid rgba(248,113,113,0.35); }
     .mini-stat.bal.neg .val { color: var(--danger); }
     .mini-stat.bal.pos .val { color: var(--success); }
+    .mini-stat.adj { cursor: pointer; }
+    .mini-stat.adj .val { color: var(--accent); }
+    .mini-stat.est .val { color: var(--success); }
+    .mini-stat.est.neg .val { color: var(--success); }
 
     .section {
       background: var(--surface); border-radius: var(--radius);
@@ -326,13 +330,13 @@
             <div class="val" id="balance">0</div>
             <div class="sub" id="balSub">kcal</div>
           </div>
-          <div class="mini-stat burn">
-            <div class="lbl">เผา <button type="button" class="info-btn" data-info="bsum">ⓘ</button></div>
-            <div class="val sm" id="bsumVal">0</div>
-            <div class="sub" id="bsumSub">kcal</div>
+          <div class="mini-stat adj" id="adjCard" title="แตะเพื่อปรับชดเชยพลังงานวันนี้">
+            <div class="lbl">ชดเชย <button type="button" class="info-btn" data-info="adj">ⓘ</button></div>
+            <div class="val sm" id="adjPct">0%</div>
+            <div class="sub" id="adjSub">+0 kcal</div>
           </div>
         </div>
-        <div class="bsum-strip" id="bsumStrip">BMR — + ออกกำลัง —</div>
+        <div class="bsum-strip" id="bsumStrip">BMR — · Est. — กก.</div>
       </div>
 
       <div class="sortable-block" data-block-id="meals">
@@ -355,13 +359,15 @@
         <span class="drag-handle">⋮⋮</span>
         <section class="section burn">
           <div class="section-title">ออกกำลังกาย (<span id="exerciseCount">0</span>/5)</div>
+          <div class="template-chips" id="exerciseTemplateChips"></div>
           <div class="meal-add-row">
             <input type="number" id="exerciseKcal" placeholder="kcal" inputmode="numeric" min="0" style="width:58px;flex:none">
             <input type="text" id="exerciseNote" placeholder="โน้ต เช่น วิ่ง" style="flex:1">
             <input type="time" id="exerciseTime">
+            <button type="button" class="btn-tpl-save" id="btnQuickExTemplate" title="บันทึกเป็นเทมเพลต">☆</button>
             <button type="button" class="btn" id="btnAddExercise" style="width:30px;padding:0;background:var(--success);color:#0f172a">+</button>
           </div>
-          <p class="hint">แคลอรี่เผา · โน้ต · แตะรายการเพื่อแก้ไข</p>
+          <p class="hint">แคลอรี่เผา · ☆=เทมเพลต · แตะรายการเพื่อแก้ไข</p>
           <ul class="meal-list" id="exerciseList"></ul>
           <p class="empty-meals" id="emptyExercises">ยังไม่มี — วันไม่ออกกำลังกายก็ได้</p>
         </section>
@@ -421,23 +427,6 @@
               <div class="chart-item-label"><span>Balance (kcal) <button type="button" class="info-btn" data-info="balance">ⓘ</button></span></div>
               <canvas class="chart-canvas" id="chartBalance" data-chart="balance"></canvas>
             </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="sortable-block" data-block-id="daily">
-        <span class="drag-handle">⋮⋮</span>
-        <section class="section collapsed" id="dailySection">
-          <div class="section-toggle" id="toggleDaily">
-            <div class="section-title" style="margin:0">รายละเอียดวันนี้</div>
-            <span class="chevron">▼</span>
-          </div>
-          <div class="section-body" style="margin-top:0.5rem">
-            <div class="field">
-              <label for="weightLoss">Est. ลดน้ำหนักวันนี้ (kg) <button type="button" class="info-btn" data-info="loss">ⓘ</button></label>
-              <input type="text" id="weightLoss" readonly style="opacity:0.7">
-            </div>
-            <div class="bmr-note" id="bsumNote"></div>
           </div>
         </section>
       </div>
@@ -508,7 +497,10 @@
       </div>
       <p class="sheet-desc">เทมเพลตมื้อ</p>
       <div id="templateEditor"></div>
-      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลต</button>
+      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตมื้อ</button>
+      <p class="sheet-desc" style="margin-top:0.6rem">เทมเพลตออกกำลังกาย</p>
+      <div id="exerciseTemplateEditor"></div>
+      <button type="button" class="btn btn-ghost" id="btnAddExTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตออกกำลัง</button>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelSettings">ปิด</button>
         <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
@@ -525,6 +517,38 @@
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelQuickTpl">ยกเลิก</button>
         <button type="button" class="btn" id="btnSaveQuickTpl">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="quickExTemplateOverlay">
+    <div class="edit-sheet">
+      <h3>บันทึกเทมเพลตออกกำลัง</h3>
+      <p class="sheet-desc">ทางลัด — ไม่ต้องเข้า Settings</p>
+      <div class="field"><label for="quickExTemplateName">ชื่อ</label><input type="text" id="quickExTemplateName" placeholder="เช่น วิ่ง"></div>
+      <div class="field-row">
+        <div class="field"><label for="quickExTemplateKcal">kcal</label><input type="number" id="quickExTemplateKcal" min="0" placeholder="300"></div>
+        <div class="field"><label for="quickExTemplateNote">โน้ต (ถ้ามี)</label><input type="text" id="quickExTemplateNote" placeholder="วิ่ง"></div>
+      </div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelQuickExTpl">ยกเลิก</button>
+        <button type="button" class="btn" id="btnSaveQuickExTpl">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="adjOverlay">
+    <div class="edit-sheet">
+      <h3>ชดเชยพลังงานวันนี้</h3>
+      <p class="sheet-desc">ปรับตามวัน — ไม่ใช่การตั้งค่าถาวร เช่น +5% ถ้า BMR น้อยไป</p>
+      <div class="field">
+        <label for="adjInput">% ของ BMR</label>
+        <input type="number" id="adjInput" step="1" min="-30" max="30" placeholder="0">
+      </div>
+      <p class="hint" id="adjPreview"></p>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelAdj">ยกเลิก</button>
+        <button type="button" class="btn" id="btnSaveAdj">บันทึก</button>
       </div>
     </div>
   </div>
@@ -554,14 +578,14 @@
       { days: 30, label: '30d' }, { days: 90, label: '3m' }, { days: 180, label: '6m' }, { days: 365, label: '12m' },
     ];
 
-    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'exercises', 'profile', 'charts', 'daily', 'data'];
+    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'exercises', 'profile', 'charts', 'data'];
 
     const INFO_TEXTS = {
       cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้ — ยังไม่กิน = 0'], ['เป้าหมาย', 'กินเข้าไปเพื่อลดขาดแคล (Balance)']] },
       prot: { title: 'โปรตีน (คงเหลือ)', body: [['เริ่มวัน', 'ติดลบตามเป้า (ยังไม่กิน)'], ['สูตร', 'กินรวม − เป้า (น้ำหนัก × ตัวคูณ)'], ['ติดลบ', 'ยังขาดอีก — ต้องกินเพิ่ม'], ['ติดบวก', 'ถึงหรือเกินเป้าแล้ว'], ['สีแดง', 'ยังขาดโปรตีน']] },
-      balance: { title: 'Balance (Deficit)', body: [['เริ่มวัน', 'ติดลบตาม Bsum (ยังไม่กิน)'], ['สูตร', 'Balance = แคลอรี่กิน − Bsum'], ['กินเข้า', 'Balance ค่อย ๆ ขึ้นใกล้ 0 หรือบวก'], ['ติดลบ (−)', 'ขาดแคล = ดีสำหรับลดน้ำหนัก'], ['ติดบวก (+)', 'กินเกินพลังงานที่ใช้']] },
-      bsum: { title: 'เผา (Bsum)', body: [['BMR', 'น้ำหนัก (kg) × ' + BMR_MULTIPLIER + ' = พลังงานพื้นฐาน'], ['ออกกำลัง', 'ผลรวม kcal จากรายการออกกำลังกาย'], ['Bsum', 'BMR + ออกกำลัง = โควตาเผาต่อวัน'], ['Balance', 'แคลอรี่กิน − Bsum']] },
-      loss: { title: 'Weight Loss Estimate', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal'], ['ติดลบ', 'ประมาณการลดน้ำหนักในวันนั้น']] },
+      balance: { title: 'Balance (Deficit)', body: [['เริ่มวัน', 'ติดลบตาม Bsum (ยังไม่กิน)'], ['สูตร', 'Balance = แคลอรี่กิน − Bsum'], ['Bsum', 'BMR × (1 + ชดเชย%) + ออกกำลัง'], ['กินเข้า', 'Balance ค่อย ๆ ขึ้นใกล้ 0 หรือบวก'], ['ติดลบ (−)', 'ขาดแคล = ดีสำหรับลดน้ำหนัก']] },
+      adj: { title: 'ชดเชยพลังงาน', body: [['วันละ', 'ปรับได้แต่ละวัน — ไม่ใช่การตั้งค่าถาวร'], ['สูตร', 'ชดเชย kcal = BMR × % ÷ 100'], ['ตัวอย่าง', '+5% ถ้าสังเกตว่าขาดแคลมากไป'], ['ผล', 'เพิ่ม Bsum → Balance ติดลบน้อยลง']] },
+      loss: { title: 'Est. ลดน้ำหนัก', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal'], ['ติดลบ', 'ประมาณการลดน้ำหนักในวันนั้น'], ['แสดง', 'ในแถบ Bsum ใต้แดชบอร์ด']] },
     };
 
     let chartPeriodDays = 30;
@@ -570,6 +594,12 @@
       { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
       { id: 't2', label: 'โปรตีนเชค', calories: 120, protein: 24 },
       { id: 't3', label: 'ข้าว+ไก่', calories: 450, protein: 35 },
+    ];
+
+    const DEFAULT_EXERCISE_TEMPLATES = [
+      { id: 'e1', label: 'วิ่ง', calories: 300, note: 'วิ่ง' },
+      { id: 'e2', label: 'เดิน', calories: 150, note: 'เดิน' },
+      { id: 'e3', label: 'ยกน้ำหนัก', calories: 200, note: 'ยกน้ำหนัก' },
     ];
 
     let currentDate = todayStr();
@@ -586,11 +616,11 @@
       btnPrevDay: $('#btnPrevDay'), btnNextDay: $('#btnNextDay'),
       totalCal: $('#totalCal'), protRemain: $('#protRemain'), protCard: $('#protCard'), protSub: $('#protSub'),
       calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'), balSub: $('#balSub'),
-      bsumVal: $('#bsumVal'), bsumSub: $('#bsumSub'), bsumStrip: $('#bsumStrip'),
-      weightLoss: $('#weightLoss'), bsumNote: $('#bsumNote'),
+      adjCard: $('#adjCard'), adjPct: $('#adjPct'), adjSub: $('#adjSub'), bsumStrip: $('#bsumStrip'),
       profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
       exerciseKcal: $('#exerciseKcal'), exerciseNote: $('#exerciseNote'), exerciseTime: $('#exerciseTime'),
-      btnAddExercise: $('#btnAddExercise'), exerciseList: $('#exerciseList'),
+      btnAddExercise: $('#btnAddExercise'), btnQuickExTemplate: $('#btnQuickExTemplate'),
+      exerciseList: $('#exerciseList'), exerciseTemplateChips: $('#exerciseTemplateChips'),
       exerciseCount: $('#exerciseCount'), emptyExercises: $('#emptyExercises'),
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
@@ -609,6 +639,7 @@
       btnSaveWeightHistory: $('#btnSaveWeightHistory'),
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
+      exerciseTemplateEditor: $('#exerciseTemplateEditor'), btnAddExTemplate: $('#btnAddExTemplate'),
       btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
@@ -616,6 +647,12 @@
       quickTemplateOverlay: $('#quickTemplateOverlay'),
       quickTemplateName: $('#quickTemplateName'), quickTemplateVal: $('#quickTemplateVal'),
       btnCancelQuickTpl: $('#btnCancelQuickTpl'), btnSaveQuickTpl: $('#btnSaveQuickTpl'),
+      quickExTemplateOverlay: $('#quickExTemplateOverlay'),
+      quickExTemplateName: $('#quickExTemplateName'), quickExTemplateKcal: $('#quickExTemplateKcal'),
+      quickExTemplateNote: $('#quickExTemplateNote'),
+      btnCancelQuickExTpl: $('#btnCancelQuickExTpl'), btnSaveQuickExTpl: $('#btnSaveQuickExTpl'),
+      adjOverlay: $('#adjOverlay'), adjInput: $('#adjInput'), adjPreview: $('#adjPreview'),
+      btnCancelAdj: $('#btnCancelAdj'), btnSaveAdj: $('#btnSaveAdj'),
       infoOverlay: $('#infoOverlay'), infoTitle: $('#infoTitle'), infoBody: $('#infoBody'),
       btnCloseInfo: $('#btnCloseInfo'),
       toast: $('#toast'),
@@ -642,6 +679,7 @@
         sectionOrder: [...DEFAULT_BLOCK_ORDER],
         chartPeriodDays: 30,
         templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+        exerciseTemplates: DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
         profile: { weight: '', age: '', waist: '', weightLog: {} },
       };
     }
@@ -660,6 +698,8 @@
           sectionOrder: merged,
           chartPeriodDays: s.chartPeriodDays || 30,
           templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+          exerciseTemplates: Array.isArray(s.exerciseTemplates) && s.exerciseTemplates.length
+            ? s.exerciseTemplates : DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
           profile: {
             weight: s.profile?.weight ?? '',
             age: s.profile?.age ?? '',
@@ -707,7 +747,7 @@
       return !isNaN(lw) && lw > 0 ? lw : 0;
     }
 
-    function defaultDayData() { return { meals: [], exercises: [] }; }
+    function defaultDayData() { return { meals: [], exercises: [], compensationPct: 0 }; }
 
     function migrateMeal(m) {
       return { id: m.id || crypto.randomUUID(), calories: m.calories, protein: m.protein, time: m.time || '12:00' };
@@ -742,6 +782,7 @@
       return {
         meals: Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [],
         exercises,
+        compensationPct: parseFloat(data.compensationPct) || 0,
         _legacyWeight: data.weight ?? '',
       };
     }
@@ -758,6 +799,7 @@
       localStorage.setItem(storageKey(dateStr), JSON.stringify({
         meals: data.meals ?? [],
         exercises: (data.exercises ?? []).map(migrateExercise),
+        compensationPct: parseFloat(data.compensationPct) || 0,
       }));
     }
 
@@ -805,13 +847,15 @@
       const totalCal = data.meals.reduce((s, m) => s + m.calories, 0);
       const totalProt = data.meals.reduce((s, m) => s + m.protein, 0);
       const baseBMR = calcBMR(weight);
+      const compensationPct = parseFloat(data.compensationPct) || 0;
+      const compensationKcal = baseBMR * (compensationPct / 100);
       const exercise = sumExerciseBurn(data.exercises);
-      const bsum = baseBMR + exercise;
+      const bsum = baseBMR + compensationKcal + exercise;
       const balance = totalCal - bsum;
       const proteinTarget = getProteinTarget(weight);
       const proteinRemain = totalProt - proteinTarget;
       return {
-        totalCal, totalProt, baseBMR, exercise, bsum, balance,
+        totalCal, totalProt, baseBMR, compensationPct, compensationKcal, exercise, bsum, balance,
         proteinTarget, proteinRemain,
         weightLoss: bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0,
       };
@@ -912,20 +956,26 @@
       els.balanceCard.classList.toggle('pos', st.balance > 0);
       els.balSub.textContent = st.balance < 0 ? 'ขาด ' + Math.abs(br) : st.balance > 0 ? 'เกิน ' + br : 'พอดี';
 
-      els.bsumVal.textContent = Math.round(st.bsum);
-      els.bsumSub.textContent = 'kcal เผา';
+      const pct = Math.round(st.compensationPct);
+      els.adjPct.textContent = (pct > 0 ? '+' : '') + pct + '%';
+      const ck = Math.round(st.compensationKcal);
+      els.adjSub.textContent = (ck > 0 ? '+' : '') + ck + ' kcal';
 
       const w = getWeightOnDate(currentDate);
       if (w > 0) {
-        const exPart = st.exercise > 0 ? ' + ออกกำลัง <strong>' + Math.round(st.exercise) + '</strong>' : '';
-        els.bsumStrip.innerHTML = 'BMR <strong>' + Math.round(st.baseBMR) + '</strong>' + exPart + ' = เผารวม <strong>' + Math.round(st.bsum) + '</strong> kcal';
-        els.bsumNote.innerHTML = els.bsumStrip.innerHTML;
+        let parts = 'BMR <strong>' + Math.round(st.baseBMR) + '</strong>';
+        if (st.compensationKcal) {
+          parts += ' + ชดเชย <strong>' + (ck > 0 ? '+' : '') + ck + '</strong>';
+        }
+        if (st.exercise > 0) parts += ' + ออกกำลัง <strong>' + Math.round(st.exercise) + '</strong>';
+        parts += ' = เผา <strong>' + Math.round(st.bsum) + '</strong> kcal';
+        const wl = Math.round(st.weightLoss * 1000) / 1000;
+        const wlTxt = wl < 0 ? '↓' + Math.abs(wl) : wl > 0 ? '↑' + wl : '0';
+        parts += ' · Est. <strong>' + wlTxt + '</strong> กก.';
+        els.bsumStrip.innerHTML = parts;
       } else {
         els.bsumStrip.textContent = 'กรอกน้ำหนักเพื่อคำนวณ BMR';
-        els.bsumNote.textContent = 'กรอกน้ำหนักเพื่อคำนวณ BMR';
       }
-
-      els.weightLoss.value = (st.weightLoss >= 0 ? '+' : '') + (Math.round(st.weightLoss * 1000) / 1000);
     }
 
     function renderMeals(meals) {
@@ -1135,6 +1185,20 @@
       });
     }
 
+    function renderExerciseTemplates() {
+      els.exerciseTemplateChips.innerHTML = '';
+      loadSettings().exerciseTemplates.forEach((t) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
+        b.onclick = () => {
+          els.exerciseKcal.value = t.calories;
+          els.exerciseNote.value = t.note || t.label;
+          els.exerciseKcal.focus();
+        };
+        els.exerciseTemplateChips.appendChild(b);
+      });
+    }
+
     function renderTemplateEditor() {
       els.templateEditor.innerHTML = '';
       loadSettings().templates.forEach((t, i) => {
@@ -1153,6 +1217,36 @@
         const val = els.templateEditor.querySelector('[data-tpl="val"][data-i="' + i + '"]');
         const p = parseMealInput(val?.value || '');
         if (p && el.value.trim()) templates.push({ id: 't' + Date.now() + i, label: el.value.trim(), ...p });
+      });
+      return templates;
+    }
+
+    function renderExerciseTemplateEditor() {
+      els.exerciseTemplateEditor.innerHTML = '';
+      loadSettings().exerciseTemplates.forEach((t, i) => {
+        const row = document.createElement('div');
+        row.className = 'field-row'; row.style.marginBottom = '0.4rem';
+        row.innerHTML = '<input data-extpl="label" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-extpl="kcal" data-i="' + i + '" value="' + t.calories + '" inputmode="numeric" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-extpl="note" data-i="' + i + '" value="' + String(t.note || '').replace(/"/g, '&quot;') + '" placeholder="โน้ต" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
+        els.exerciseTemplateEditor.appendChild(row);
+      });
+    }
+
+    function readExerciseTemplateEditor() {
+      const templates = [];
+      els.exerciseTemplateEditor.querySelectorAll('[data-extpl="label"]').forEach((el) => {
+        const i = el.dataset.i;
+        const kcalEl = els.exerciseTemplateEditor.querySelector('[data-extpl="kcal"][data-i="' + i + '"]');
+        const noteEl = els.exerciseTemplateEditor.querySelector('[data-extpl="note"][data-i="' + i + '"]');
+        const kcal = parseFloat(kcalEl?.value);
+        if (!el.value.trim() || isNaN(kcal) || kcal <= 0) return;
+        templates.push({
+          id: 'e' + Date.now() + i,
+          label: el.value.trim(),
+          calories: kcal,
+          note: noteEl?.value.trim() || el.value.trim(),
+        });
       });
       return templates;
     }
@@ -1221,6 +1315,7 @@
       renderDashboard(calculate(data, w));
       renderPeriodSummary();
       renderTemplates();
+      renderExerciseTemplates();
       renderCharts();
     }
 
@@ -1322,13 +1417,77 @@
       saveDay(currentDate, data); closeEditExercise(); refresh();
     }
 
-    function openSettings() { els.proteinMultiplier.value = loadSettings().proteinMultiplier; renderTemplateEditor(); els.settingsOverlay.classList.add('open'); }
+    function openQuickExerciseTemplate() {
+      const kcal = parseFloat(els.exerciseKcal.value);
+      els.quickExTemplateKcal.value = !isNaN(kcal) && kcal > 0 ? kcal : '';
+      els.quickExTemplateNote.value = els.exerciseNote.value.trim();
+      els.quickExTemplateName.value = els.exerciseNote.value.trim() || '';
+      els.quickExTemplateOverlay.classList.add('open');
+      els.quickExTemplateName.focus();
+    }
+
+    function saveQuickExerciseTemplate() {
+      const kcal = parseFloat(els.quickExTemplateKcal.value);
+      const name = els.quickExTemplateName.value.trim();
+      if (isNaN(kcal) || kcal <= 0) { showToast('ใส่ kcal', 'error'); return; }
+      if (!name) { showToast('ใส่ชื่อเทมเพลต', 'error'); return; }
+      const templates = loadSettings().exerciseTemplates;
+      templates.push({
+        id: 'e' + Date.now(),
+        label: name,
+        calories: kcal,
+        note: els.quickExTemplateNote.value.trim() || name,
+      });
+      saveSettings({ exerciseTemplates: templates });
+      els.quickExTemplateOverlay.classList.remove('open');
+      renderExerciseTemplates();
+      showToast('บันทึกเทมเพลต "' + name + '"', 'success');
+    }
+
+    function openAdjEditor() {
+      const data = loadDay(currentDate);
+      els.adjInput.value = data.compensationPct || 0;
+      updateAdjPreview();
+      els.adjOverlay.classList.add('open');
+      els.adjInput.focus();
+    }
+
+    function updateAdjPreview() {
+      const pct = parseFloat(els.adjInput.value) || 0;
+      const bmr = calcBMR(getWeightOnDate(currentDate));
+      const kcal = Math.round(bmr * pct / 100);
+      els.adjPreview.textContent = bmr > 0
+        ? 'ชดเชย ' + (kcal > 0 ? '+' : '') + kcal + ' kcal จาก BMR ' + Math.round(bmr)
+        : 'กรอกน้ำหนักก่อนเพื่อดูตัวอย่าง';
+    }
+
+    function saveAdj() {
+      const pct = parseFloat(els.adjInput.value);
+      if (isNaN(pct) || pct < -30 || pct > 30) { showToast('ใช้ % ระหว่าง −30 ถึง +30', 'error'); return; }
+      const data = loadDay(currentDate);
+      data.compensationPct = pct;
+      saveDay(currentDate, data);
+      els.adjOverlay.classList.remove('open');
+      refresh();
+    }
+
+    function openSettings() {
+      els.proteinMultiplier.value = loadSettings().proteinMultiplier;
+      renderTemplateEditor();
+      renderExerciseTemplateEditor();
+      els.settingsOverlay.classList.add('open');
+    }
     function closeSettings() { els.settingsOverlay.classList.remove('open'); }
     function saveAllSettings() {
       const mult = parseFloat(els.proteinMultiplier.value);
       if (isNaN(mult) || mult < 0.5 || mult > 3) { showToast('ตัวคูณ 0.5–3.0', 'error'); return; }
       const tpl = readTemplateEditor();
-      saveSettings({ proteinMultiplier: mult, templates: tpl.length ? tpl : loadSettings().templates });
+      const exTpl = readExerciseTemplateEditor();
+      saveSettings({
+        proteinMultiplier: mult,
+        templates: tpl.length ? tpl : loadSettings().templates,
+        exerciseTemplates: exTpl.length ? exTpl : loadSettings().exerciseTemplates,
+      });
       closeSettings(); refresh();
     }
 
@@ -1407,9 +1566,19 @@
     els.btnSaveEditEx.onclick = saveEditExercise;
     els.editExerciseOverlay.onclick = (e) => { if (e.target === els.editExerciseOverlay) closeEditExercise(); };
     els.btnQuickTemplate.onclick = openQuickTemplate;
+    els.btnQuickExTemplate.onclick = openQuickExerciseTemplate;
     els.btnCancelQuickTpl.onclick = () => els.quickTemplateOverlay.classList.remove('open');
     els.btnSaveQuickTpl.onclick = saveQuickTemplate;
     els.quickTemplateOverlay.onclick = (e) => { if (e.target === els.quickTemplateOverlay) els.quickTemplateOverlay.classList.remove('open'); };
+    els.btnCancelQuickExTpl.onclick = () => els.quickExTemplateOverlay.classList.remove('open');
+    els.btnSaveQuickExTpl.onclick = saveQuickExerciseTemplate;
+    els.quickExTemplateOverlay.onclick = (e) => { if (e.target === els.quickExTemplateOverlay) els.quickExTemplateOverlay.classList.remove('open'); };
+    els.adjCard.onclick = (e) => { if (!e.target.closest('.info-btn')) openAdjEditor(); };
+    els.adjInput.oninput = updateAdjPreview;
+    els.btnCancelAdj.onclick = () => els.adjOverlay.classList.remove('open');
+    els.btnSaveAdj.onclick = saveAdj;
+    els.adjOverlay.onclick = (e) => { if (e.target === els.adjOverlay) els.adjOverlay.classList.remove('open'); };
+    els.adjInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveAdj(); } };
     els.quickTemplateName.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); saveQuickTemplate(); } };
 
     document.body.addEventListener('click', (e) => {
@@ -1456,11 +1625,15 @@
       t.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
       saveSettings({ templates: t }); renderTemplateEditor();
     };
+    els.btnAddExTemplate.onclick = () => {
+      const t = loadSettings().exerciseTemplates;
+      t.push({ id: 'e' + Date.now(), label: 'ออกกำลังใหม่', calories: 200, note: '' });
+      saveSettings({ exerciseTemplates: t }); renderExerciseTemplateEditor();
+    };
     els.btnTheme.onclick = () => { applyTheme(loadSettings().theme === 'dark' ? 'light' : 'dark'); renderCharts(); };
     els.btnExport.onclick = exportData;
     els.btnImport.onclick = () => els.importFile.click();
     els.importFile.onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
-    $('#toggleDaily').onclick = () => $('#dailySection').classList.toggle('collapsed');
     $('#toggleData').onclick = () => $('#dataSection').classList.toggle('collapsed');
 
     window.addEventListener('resize', renderCharts);
