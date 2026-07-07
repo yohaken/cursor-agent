@@ -7,217 +7,107 @@
   <title>Calorie & Protein Tracker</title>
   <style>
     :root, [data-theme="dark"] {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-2: #334155;
-      --border: #475569;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-dim: #0ea5e9;
-      --success: #4ade80;
-      --danger: #f87171;
-      --warning: #fbbf24;
-      --protein: #a78bfa;
-      --radius: 12px;
-      --shadow: 0 2px 16px rgba(0,0,0,0.3);
+      --bg: #0f172a; --surface: #1e293b; --surface-2: #334155; --border: #475569;
+      --text: #f1f5f9; --muted: #94a3b8; --accent: #38bdf8; --accent-dim: #0ea5e9;
+      --success: #4ade80; --danger: #f87171; --warning: #fbbf24; --protein: #a78bfa;
+      --radius: 12px; --shadow: 0 2px 16px rgba(0,0,0,0.3);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-
     [data-theme="light"] {
-      --bg: #f1f5f9;
-      --surface: #fff;
-      --surface-2: #e2e8f0;
-      --border: #cbd5e1;
-      --text: #0f172a;
-      --muted: #64748b;
-      --accent: #0284c7;
-      --accent-dim: #0ea5e9;
-      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --bg: #f1f5f9; --surface: #fff; --surface-2: #e2e8f0; --border: #cbd5e1;
+      --text: #0f172a; --muted: #64748b; --accent: #0284c7; --shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.45;
-      min-height: 100dvh;
-      padding-bottom: calc(1rem + var(--safe-bottom));
+      background: var(--bg); color: var(--text); line-height: 1.4;
+      min-height: 100dvh; padding-bottom: calc(1rem + var(--safe-bottom));
     }
-
-    .app { max-width: 480px; margin: 0 auto; padding: 0.75rem; }
-
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.65rem;
-    }
-
-    .top-bar h1 { font-size: 1.15rem; font-weight: 700; }
-    .top-actions { display: flex; gap: 0.35rem; }
-
+    .app { max-width: 480px; margin: 0 auto; padding: 0.65rem; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .top-bar h1 { font-size: 1.1rem; font-weight: 700; }
+    .top-actions { display: flex; gap: 0.3rem; }
     .btn-sm {
-      background: var(--surface);
-      border: 1px solid var(--surface-2);
-      color: var(--muted);
-      border-radius: 8px;
-      padding: 0.35rem 0.55rem;
-      font-size: 0.75rem;
-      cursor: pointer;
+      background: var(--surface); border: 1px solid var(--surface-2); color: var(--muted);
+      border-radius: 8px; padding: 0.3rem 0.5rem; font-size: 0.72rem; cursor: pointer;
     }
 
-    .btn-sm:active { opacity: 0.7; }
+    #blocksContainer { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .sortable-block {
+      position: relative;
+      touch-action: pan-y;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .sortable-block.dragging { opacity: 0.45; z-index: 10; }
+    .sortable-block.drag-over { transform: translateY(4px); }
+
+    .drag-handle {
+      position: absolute; top: 0.45rem; right: 0.45rem;
+      color: var(--muted); font-size: 0.7rem; padding: 0.2rem 0.35rem;
+      cursor: grab; user-select: none; z-index: 2; opacity: 0.5;
+      letter-spacing: -1px;
+    }
+    .drag-handle:active { cursor: grabbing; opacity: 1; }
 
     .period-summary {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.55rem 0.5rem;
-      margin-bottom: 0.65rem;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: var(--radius);
+      padding: 0.45rem 0.35rem 0.4rem; box-shadow: var(--shadow);
     }
-
     .period-summary .section-title {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 0 0.25rem 0.4rem;
+      font-size: 0.62rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em; padding: 0 0.15rem 0.3rem;
     }
-
-    .period-scroll {
-      display: flex;
-      gap: 0.35rem;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      padding-bottom: 2px;
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
     }
-
-    .period-scroll::-webkit-scrollbar { display: none; }
-
     .period-card {
-      flex: 0 0 31%;
-      min-width: 96px;
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 0.4rem 0.35rem;
-      text-align: center;
+      background: var(--bg); border-radius: 5px;
+      padding: 0.22rem 0.1rem; text-align: center; min-width: 0;
     }
-
     .period-card .period-label {
-      font-size: 0.62rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 0.3rem;
-      white-space: nowrap;
+      font-size: 0.52rem; font-weight: 700; color: var(--accent);
+      margin-bottom: 0.15rem; line-height: 1.1;
     }
-
     .period-stat {
-      font-size: 0.58rem;
-      color: var(--muted);
-      line-height: 1.25;
-      margin-bottom: 0.12rem;
+      font-size: 0.48rem; color: var(--muted); line-height: 1.15;
     }
-
     .period-stat .val {
-      display: block;
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: var(--text);
+      display: block; font-size: 0.52rem; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .period-stat .val.good { color: var(--success); }
     .period-stat .val.bad { color: var(--danger); }
     .period-stat .val.neutral { color: var(--muted); }
 
     .date-nav {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.45rem 0.5rem;
-      margin-bottom: 0.65rem;
-      box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 0.35rem;
+      background: var(--surface); border-radius: var(--radius);
+      padding: 0.4rem 0.45rem; box-shadow: var(--shadow);
     }
-
     .date-nav button {
-      background: var(--surface-2);
-      border: none;
-      color: var(--text);
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      flex-shrink: 0;
+      background: var(--surface-2); border: none; color: var(--text);
+      width: 32px; height: 32px; border-radius: 8px; font-size: 0.95rem; flex-shrink: 0;
     }
-
     .date-display { flex: 1; text-align: center; }
-    .date-display .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+    .date-display .label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
     .date-display input[type="date"] {
-      background: transparent;
-      border: none;
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 600;
-      text-align: center;
-      width: 100%;
+      background: transparent; border: none; color: var(--text);
+      font-size: 16px; font-weight: 600; text-align: center; width: 100%;
     }
-
-    .section {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.75rem;
-      margin-bottom: 0.65rem;
-      box-shadow: var(--shadow);
-    }
-
-    .section.priority { border: 1px solid rgba(56, 189, 248, 0.2); }
-
-    .section-title {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.6rem;
-    }
-
-    .section.collapsed .section-body { display: none; }
-    .section-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .section-toggle .chevron { color: var(--muted); font-size: 0.8rem; transition: transform 0.2s; }
-    .section.collapsed .chevron { transform: rotate(-90deg); }
 
     .inline-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.4rem;
-      margin-bottom: 0.65rem;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;
     }
-
     .mini-stat {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.5rem 0.4rem;
-      text-align: center;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: var(--radius);
+      padding: 0.4rem 0.3rem; text-align: center; box-shadow: var(--shadow);
     }
-
-    .mini-stat .lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
-    .mini-stat .val { font-size: 1rem; font-weight: 700; margin-top: 0.1rem; }
-    .mini-stat .sub { font-size: 0.58rem; color: var(--muted); }
+    .mini-stat .lbl { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; }
+    .mini-stat .val { font-size: 0.95rem; font-weight: 700; }
+    .mini-stat .sub { font-size: 0.52rem; color: var(--muted); }
     .mini-stat.cal .val { color: var(--warning); }
     .mini-stat.prot .val { color: var(--protein); }
     .mini-stat.prot.bad .val { color: var(--danger); }
@@ -225,200 +115,121 @@
     .mini-stat.bal.neg .val { color: var(--danger); }
     .mini-stat.bal.pos .val { color: var(--success); }
 
-    .meal-add-row {
-      display: flex;
-      gap: 0.35rem;
-      align-items: stretch;
-      margin-bottom: 0.4rem;
+    .section {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 0.65rem 0.65rem 0.65rem 0.55rem; box-shadow: var(--shadow);
     }
+    .section.priority { border: 1px solid rgba(56,189,248,0.2); }
+    .section-title {
+      font-size: 0.68rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem;
+      padding-right: 1.5rem;
+    }
+    .section.collapsed .section-body { display: none; }
+    .section-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none; padding-right: 1.2rem;
+    }
+    .section-toggle .chevron { color: var(--muted); font-size: 0.75rem; transition: transform 0.2s; }
+    .section.collapsed .chevron { transform: rotate(-90deg); }
 
+    .meal-add-row { display: flex; gap: 0.3rem; margin-bottom: 0.35rem; }
     .meal-add-row input[type="text"] {
-      flex: 1;
-      min-width: 0;
-      background: var(--bg);
-      border: 1px solid var(--surface-2);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 0.55rem 0.6rem;
-      font-size: 16px;
+      flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 8px; color: var(--text); padding: 0.5rem; font-size: 16px;
     }
-
     .meal-add-row input[type="time"] {
-      width: 72px;
-      background: var(--bg);
-      border: 1px solid var(--surface-2);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 0.45rem 0.2rem;
-      font-size: 16px;
-      -webkit-appearance: none;
-      appearance: none;
+      width: 68px; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 8px; color: var(--text); padding: 0.4rem 0.15rem; font-size: 16px;
     }
-
     .btn {
-      background: var(--accent-dim);
-      color: #0f172a;
-      border: none;
-      border-radius: 8px;
-      padding: 0.55rem 0.75rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
+      background: var(--accent-dim); color: #0f172a; border: none; border-radius: 8px;
+      padding: 0.5rem 0.65rem; font-size: 0.82rem; font-weight: 600; flex-shrink: 0;
     }
-
-    .btn:active { opacity: 0.8; }
-    .btn:disabled { opacity: 0.4; }
     .btn-ghost { background: var(--surface-2); color: var(--text); }
-    .btn-danger { background: transparent; color: var(--danger); font-size: 0.75rem; padding: 0.3rem 0.5rem; }
-
-    .template-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .chip {
-      background: var(--bg);
-      border: 1px solid var(--surface-2);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 0.3rem 0.6rem;
-      font-size: 0.72rem;
-      cursor: pointer;
-    }
-
-    .chip:active { border-color: var(--accent); }
-
-    .meal-list { list-style: none; }
-
-    .meal-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.4rem;
-      padding: 0.55rem 0;
-      border-bottom: 1px solid var(--surface-2);
-    }
-
-    .meal-item:last-child { border-bottom: none; }
-    .meal-info .meal-nums { font-weight: 600; font-size: 0.88rem; }
-    .meal-info .meal-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.05rem; }
-    .meal-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
-
+    .btn-danger { background: transparent; color: var(--danger); font-size: 0.72rem; padding: 0.25rem 0.4rem; }
     .btn-icon {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
-      border-radius: 8px;
+      width: 30px; height: 30px; padding: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 0.85rem; border-radius: 7px;
     }
+    .template-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.4rem; }
+    .chip {
+      background: var(--bg); border: 1px solid var(--surface-2); color: var(--text);
+      border-radius: 999px; padding: 0.25rem 0.5rem; font-size: 0.68rem;
+    }
+    .meal-list { list-style: none; }
+    .meal-item {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.35rem; padding: 0.45rem 0; border-bottom: 1px solid var(--surface-2);
+    }
+    .meal-item:last-child { border-bottom: none; }
+    .meal-info .meal-nums { font-weight: 600; font-size: 0.85rem; }
+    .meal-info .meal-meta { font-size: 0.68rem; color: var(--muted); }
+    .empty-meals { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 0.4rem 0; }
+    .hint { font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
 
-    .empty-meals { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 0.5rem 0; }
-    .hint { font-size: 0.68rem; color: var(--muted); margin-top: 0.25rem; }
-
-    .field { margin-bottom: 0.65rem; }
+    .field { margin-bottom: 0.55rem; }
     .field:last-child { margin-bottom: 0; }
-    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; }
-
-    .field input,
-    .field textarea {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--surface-2);
-      border-radius: 8px;
-      color: var(--text);
-      padding: 0.55rem 0.65rem;
-      font-size: 16px;
+    .field label { display: block; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem; }
+    .field input, .field textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 8px; color: var(--text); padding: 0.5rem; font-size: 16px;
     }
+    .field textarea { resize: vertical; min-height: 48px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
 
-    .field textarea { resize: vertical; min-height: 52px; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.4rem; }
+    .mini-chart {
+      width: 100%; height: 64px; border-radius: 8px; background: var(--bg);
+    }
+    .chart-label { font-size: 0.58rem; color: var(--muted); text-align: center; margin-top: 0.15rem; }
 
-    .weight-chart {
-      width: 100%;
-      height: 80px;
-      margin-top: 0.5rem;
-      border-radius: 8px;
-      background: var(--bg);
+    .weight-log-list { list-style: none; max-height: 50dvh; overflow-y: auto; }
+    .weight-log-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--surface-2);
+    }
+    .weight-log-item.anomaly { background: rgba(248,113,113,0.08); border-radius: 6px; padding: 0.5rem 0.35rem; }
+    .weight-log-item .wl-date { font-size: 0.75rem; flex: 1; min-width: 0; }
+    .weight-log-item input {
+      width: 72px; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 6px; color: var(--text); padding: 0.35rem; font-size: 16px; text-align: right;
     }
 
     .bmr-note {
-      font-size: 0.72rem;
-      color: var(--muted);
-      margin-top: 0.4rem;
-      padding: 0.45rem 0.55rem;
-      background: var(--bg);
-      border-radius: 8px;
+      font-size: 0.68rem; color: var(--muted); margin-top: 0.35rem;
+      padding: 0.4rem 0.5rem; background: var(--bg); border-radius: 8px;
     }
-
-    .bmr-note strong { color: var(--accent); }
-
-    .data-actions {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-    }
-
-    .data-actions .btn,
-    .data-actions .btn-sm { flex: 1; min-width: 0; text-align: center; }
+    .data-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .data-actions .btn { flex: 1; min-width: 0; text-align: center; font-size: 0.75rem; padding: 0.45rem; }
 
     .edit-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 50;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 1rem;
-      padding-bottom: calc(1rem + var(--safe-bottom));
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 50; align-items: flex-end; justify-content: center;
+      padding: 1rem; padding-bottom: calc(1rem + var(--safe-bottom));
     }
-
     .edit-overlay.open { display: flex; }
-
     .edit-sheet {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 1.1rem;
-      width: 100%;
-      max-width: 480px;
-      max-height: 85dvh;
-      overflow-y: auto;
-      box-shadow: var(--shadow);
+      background: var(--surface); border-radius: var(--radius); padding: 1rem;
+      width: 100%; max-width: 480px; max-height: 85dvh; overflow-y: auto; box-shadow: var(--shadow);
     }
-
-    .edit-sheet h3 { font-size: 0.95rem; margin-bottom: 0.3rem; }
-    .edit-sheet .sheet-desc { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.85rem; }
-    .edit-actions { display: flex; gap: 0.4rem; margin-top: 0.85rem; }
+    .edit-sheet h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .edit-sheet .sheet-desc { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.7rem; }
+    .edit-actions { display: flex; gap: 0.35rem; margin-top: 0.7rem; }
     .edit-actions .btn { flex: 1; }
 
     .toast {
-      position: fixed;
-      bottom: calc(1rem + var(--safe-bottom));
-      left: 50%;
-      transform: translateX(-50%) translateY(120%);
-      padding: 0.6rem 1.1rem;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      font-weight: 500;
-      z-index: 100;
-      transition: transform 0.3s ease;
-      max-width: calc(100% - 2rem);
-      text-align: center;
+      position: fixed; bottom: calc(1rem + var(--safe-bottom)); left: 50%;
+      transform: translateX(-50%) translateY(120%); padding: 0.55rem 1rem;
+      border-radius: 10px; font-size: 0.8rem; font-weight: 500; z-index: 100;
+      transition: transform 0.3s; max-width: calc(100% - 2rem); text-align: center;
     }
-
     .toast.show { transform: translateX(-50%) translateY(0); }
     .toast.error { background: var(--danger); color: #fff; }
     .toast.success { background: var(--success); color: #0f172a; }
-
     input[type="file"] { display: none; }
+    .reorder-hint { font-size: 0.58rem; color: var(--muted); text-align: center; margin-bottom: 0.35rem; }
   </style>
 </head>
 <body>
@@ -426,126 +237,148 @@
     <div class="top-bar">
       <h1>Calorie & Protein</h1>
       <div class="top-actions">
-        <button type="button" class="btn-sm" id="btnTheme" aria-label="สลับธีม">☀️</button>
-        <button type="button" class="btn-sm" id="btnSettings" aria-label="ตั้งค่า">⚙️</button>
+        <button type="button" class="btn-sm" id="btnTheme">☀️</button>
+        <button type="button" class="btn-sm" id="btnSettings">⚙️</button>
       </div>
     </div>
+    <p class="reorder-hint">ลาก ⋮⋮ เพื่อจัดลำดับหมวด — ระบบจำไว้</p>
 
-    <section class="period-summary" aria-label="สรุปย้อนหลัง">
-      <div class="section-title">สรุปย้อนหลัง</div>
-      <div class="period-scroll" id="periodScroll"></div>
-    </section>
+    <div id="blocksContainer">
+      <div class="sortable-block" data-block-id="summary">
+        <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+        <section class="period-summary">
+          <div class="section-title">สรุปย้อนหลัง</div>
+          <div class="period-grid" id="periodGrid"></div>
+        </section>
+      </div>
 
-    <nav class="date-nav" aria-label="เลือกวันที่">
-      <button type="button" id="btnPrevDay" aria-label="วันก่อนหน้า">‹</button>
-      <div class="date-display">
-        <div class="label" id="dateLabel">วันนี้</div>
-        <input type="date" id="datePicker">
+      <div class="sortable-block" data-block-id="date">
+        <span class="drag-handle">⋮⋮</span>
+        <nav class="date-nav">
+          <button type="button" id="btnPrevDay">‹</button>
+          <div class="date-display">
+            <div class="label" id="dateLabel">วันนี้</div>
+            <input type="date" id="datePicker">
+          </div>
+          <button type="button" id="btnNextDay">›</button>
+        </nav>
       </div>
-      <button type="button" id="btnNextDay" aria-label="วันถัดไป">›</button>
-    </nav>
 
-    <div class="inline-stats" aria-label="สรุปวันนี้">
-      <div class="mini-stat cal">
-        <div class="lbl">Cal</div>
-        <div class="val" id="totalCal">0</div>
-        <div class="sub" id="calSub">kcal</div>
+      <div class="sortable-block" data-block-id="stats">
+        <span class="drag-handle">⋮⋮</span>
+        <div class="inline-stats">
+          <div class="mini-stat cal">
+            <div class="lbl">Cal</div>
+            <div class="val" id="totalCal">0</div>
+            <div class="sub" id="calSub">kcal</div>
+          </div>
+          <div class="mini-stat prot" id="protCard">
+            <div class="lbl">Prot <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0;border:none;background:none;font-size:0.55rem">✎</button></div>
+            <div class="val" id="totalProt">0</div>
+            <div class="sub" id="protSub">/ —g</div>
+          </div>
+          <div class="mini-stat bal" id="balanceCard">
+            <div class="lbl">Bal</div>
+            <div class="val" id="balance">0</div>
+            <div class="sub">kcal</div>
+          </div>
+        </div>
       </div>
-      <div class="mini-stat prot" id="protCard">
-        <div class="lbl">Protein <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0 0.2rem;border:none;background:none;font-size:0.6rem">✎</button></div>
-        <div class="val" id="totalProt">0</div>
-        <div class="sub" id="protSub">/ — g</div>
+
+      <div class="sortable-block" data-block-id="meals">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section priority">
+          <div class="section-title">เพิ่มมื้อ (<span id="mealCount">0</span>/7)</div>
+          <div class="template-chips" id="templateChips"></div>
+          <div class="meal-add-row">
+            <input type="text" id="mealInput" placeholder="Cal,Protein" autocomplete="off">
+            <input type="time" id="mealTime">
+            <button type="button" class="btn" id="btnAddMeal">+</button>
+          </div>
+          <p class="hint">450,30 · เวลา = ตอนนี้</p>
+          <ul class="meal-list" id="mealList"></ul>
+          <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ</p>
+        </section>
       </div>
-      <div class="mini-stat bal" id="balanceCard">
-        <div class="lbl">Balance</div>
-        <div class="val" id="balance">0</div>
-        <div class="sub">kcal</div>
+
+      <div class="sortable-block" data-block-id="profile">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section">
+          <div class="section-title">ข้อมูลผู้ใช้</div>
+          <div class="field-row-3">
+            <div class="field">
+              <label for="profileWeight">น้ำหนัก kg</label>
+              <input type="number" id="profileWeight" inputmode="decimal" step="0.1" min="0">
+            </div>
+            <div class="field">
+              <label for="profileAge">อายุ</label>
+              <input type="number" id="profileAge" inputmode="numeric" min="1" max="120">
+            </div>
+            <div class="field">
+              <label for="profileWaist">เอว cm</label>
+              <input type="number" id="profileWaist" inputmode="decimal" step="0.1" min="0">
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก</button>
+          <div class="chart-row">
+            <div><canvas class="mini-chart" id="weightChart"></canvas><div class="chart-label">น้ำหนัก 30วัน</div></div>
+            <div><canvas class="mini-chart" id="balanceChart"></canvas><div class="chart-label">Balance 30วัน</div></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="sortable-block" data-block-id="daily">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section collapsed" id="dailySection">
+          <div class="section-toggle" id="toggleDaily">
+            <div class="section-title" style="margin:0">รายละเอียดวันนี้</div>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="section-body" style="margin-top:0.5rem">
+            <div class="field-row">
+              <div class="field">
+                <label for="exerciseBurn">Exercise kcal</label>
+                <input type="number" id="exerciseBurn" inputmode="numeric" min="0" placeholder="0">
+              </div>
+              <div class="field">
+                <label for="weightLoss">Est. kg</label>
+                <input type="text" id="weightLoss" readonly style="opacity:0.7">
+              </div>
+            </div>
+            <div class="field">
+              <label for="workoutProgram">Workout</label>
+              <textarea id="workoutProgram" rows="2"></textarea>
+            </div>
+            <div class="bmr-note" id="bsumNote"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="sortable-block" data-block-id="data">
+        <span class="drag-handle">⋮⋮</span>
+        <section class="section collapsed" id="dataSection">
+          <div class="section-toggle" id="toggleData">
+            <div class="section-title" style="margin:0">สำรองข้อมูล</div>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="section-body" style="margin-top:0.5rem">
+            <p class="hint" style="margin-bottom:0.4rem">Export ก่อนอัปเดตเว็บ</p>
+            <div class="data-actions">
+              <button type="button" class="btn btn-ghost" id="btnExport">Export</button>
+              <button type="button" class="btn btn-ghost" id="btnImport">Import</button>
+              <input type="file" id="importFile" accept=".json">
+            </div>
+          </div>
+        </section>
       </div>
     </div>
-
-    <section class="section priority" aria-label="เพิ่มมื้ออาหาร">
-      <div class="section-title">เพิ่มมื้อ (<span id="mealCount">0</span>/7)</div>
-      <div class="template-chips" id="templateChips"></div>
-      <div class="meal-add-row">
-        <input type="text" id="mealInput" placeholder="Cal,Protein" autocomplete="off">
-        <input type="time" id="mealTime" aria-label="เวลา">
-        <button type="button" class="btn" id="btnAddMeal">+</button>
-      </div>
-      <p class="hint">เช่น 450,30 · เวลาเริ่มต้น = ตอนนี้</p>
-      <ul class="meal-list" id="mealList"></ul>
-      <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ — เพิ่มด้านบน</p>
-    </section>
-
-    <section class="section" aria-label="ข้อมูลผู้ใช้">
-      <div class="section-title">ข้อมูลผู้ใช้</div>
-      <div class="field-row-3">
-        <div class="field">
-          <label for="profileWeight">น้ำหนัก (kg)</label>
-          <input type="number" id="profileWeight" inputmode="decimal" step="0.1" min="0" placeholder="70">
-        </div>
-        <div class="field">
-          <label for="profileAge">อายุ</label>
-          <input type="number" id="profileAge" inputmode="numeric" step="1" min="1" max="120" placeholder="30">
-        </div>
-        <div class="field">
-          <label for="profileWaist">รอบเอว (cm)</label>
-          <input type="number" id="profileWaist" inputmode="decimal" step="0.1" min="0" placeholder="80">
-        </div>
-      </div>
-      <canvas class="weight-chart" id="weightChart" aria-label="กราฟน้ำหนัก 30 วัน"></canvas>
-    </section>
-
-    <section class="section collapsed" id="dailySection" aria-label="ข้อมูลรายวัน">
-      <div class="section-toggle" id="toggleDaily">
-        <div class="section-title" style="margin:0">รายละเอียดวันนี้</div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="section-body" style="margin-top:0.65rem">
-        <div class="field-row">
-          <div class="field">
-            <label for="exerciseBurn">Exercise Burn (kcal)</label>
-            <input type="number" id="exerciseBurn" inputmode="numeric" step="1" min="0" placeholder="0">
-          </div>
-          <div class="field">
-            <label for="weightLoss">Est. Loss (kg)</label>
-            <input type="text" id="weightLoss" readonly style="opacity:0.7">
-          </div>
-        </div>
-        <div class="field">
-          <label for="workoutProgram">Workout Program</label>
-          <textarea id="workoutProgram" placeholder='เช่น "อก 3, หลังแขน 1"' rows="2"></textarea>
-        </div>
-        <div class="bmr-note" id="bsumNote"></div>
-      </div>
-    </section>
-
-    <section class="section collapsed" id="dataSection" aria-label="ข้อมูลและสำรอง">
-      <div class="section-toggle" id="toggleData">
-        <div class="section-title" style="margin:0">สำรองข้อมูล</div>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="section-body" style="margin-top:0.65rem">
-        <p class="hint" style="margin-bottom:0.5rem">Export ก่อนอัปเดตเว็บ — ข้อมูลไม่หายถ้าใช้ URL เดิม</p>
-        <div class="data-actions">
-          <button type="button" class="btn btn-ghost" id="btnExport">Export JSON</button>
-          <button type="button" class="btn btn-ghost" id="btnImport">Import JSON</button>
-          <input type="file" id="importFile" accept=".json,application/json">
-        </div>
-      </div>
-    </section>
   </div>
 
-  <div class="edit-overlay" id="editOverlay" role="dialog" aria-modal="true">
+  <div class="edit-overlay" id="editOverlay">
     <div class="edit-sheet">
-      <h3>แก้ไขมื้ออาหาร</h3>
-      <div class="field">
-        <label for="editMealInput">Cal,Protein</label>
-        <input type="text" id="editMealInput" placeholder="450,30">
-      </div>
-      <div class="field">
-        <label for="editMealTime">เวลา</label>
-        <input type="time" id="editMealTime">
-      </div>
+      <h3>แก้ไขมื้อ</h3>
+      <div class="field"><label for="editMealInput">Cal,Protein</label><input type="text" id="editMealInput"></div>
+      <div class="field"><label for="editMealTime">เวลา</label><input type="time" id="editMealTime"></div>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelEdit">ยกเลิก</button>
         <button type="button" class="btn" id="btnSaveEdit">บันทึก</button>
@@ -553,16 +386,28 @@
     </div>
   </div>
 
-  <div class="edit-overlay" id="settingsOverlay" role="dialog" aria-modal="true">
+  <div class="edit-overlay" id="weightHistoryOverlay">
+    <div class="edit-sheet">
+      <h3>ประวัติน้ำหนัก</h3>
+      <p class="sheet-desc">แก้ค่าที่บันทึกผิด · แถวสีแดง = เปลี่ยนแปลงผิดปกติ (&gt;2kg จากวันก่อน)</p>
+      <ul class="weight-log-list" id="weightLogList"></ul>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCloseWeightHistory">ปิด</button>
+        <button type="button" class="btn" id="btnSaveWeightHistory">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="settingsOverlay">
     <div class="edit-sheet">
       <h3>ตั้งค่า</h3>
       <div class="field">
-        <label for="proteinMultiplier">ตัวคูณโปรตีน (× น้ำหนัก kg)</label>
-        <input type="number" id="proteinMultiplier" inputmode="decimal" step="0.01" min="0.5" max="3">
+        <label for="proteinMultiplier">ตัวคูณโปรตีน</label>
+        <input type="number" id="proteinMultiplier" step="0.01" min="0.5" max="3">
       </div>
-      <p class="sheet-desc">เทมเพลตมื้อ — กดเพิ่มด้านล่าง</p>
+      <p class="sheet-desc">เทมเพลตมื้อ</p>
       <div id="templateEditor"></div>
-      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.5rem">+ เทมเพลตใหม่</button>
+      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลต</button>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelSettings">ปิด</button>
         <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
@@ -570,7 +415,7 @@
     </div>
   </div>
 
-  <div class="toast error" id="toast" role="alert"></div>
+  <div class="toast error" id="toast"></div>
 
   <script>
     const STORAGE_PREFIX = 'calorieTracker:';
@@ -579,16 +424,14 @@
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
+    const WEIGHT_ANOMALY_KG = 2;
 
     const PERIODS = [
-      { days: 3, label: '3วัน' },
-      { days: 7, label: '7วัน' },
-      { days: 15, label: '15วัน' },
-      { days: 30, label: '30วัน' },
-      { days: 90, label: '3ด.' },
-      { days: 180, label: '6ด.' },
-      { days: 365, label: '12ด.' },
+      { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
+      { days: 30, label: '30d' }, { days: 90, label: '3m' }, { days: 180, label: '6m' }, { days: 365, label: '12m' },
     ];
+
+    const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'profile', 'daily', 'data'];
 
     const DEFAULT_TEMPLATES = [
       { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
@@ -598,95 +441,59 @@
 
     let currentDate = todayStr();
     let editingMealId = null;
+    let dragState = null;
 
-    const $ = (sel) => document.querySelector(sel);
+    const $ = (s) => document.querySelector(s);
 
     const els = {
-      periodScroll: $('#periodScroll'),
-      datePicker: $('#datePicker'),
-      dateLabel: $('#dateLabel'),
-      btnPrevDay: $('#btnPrevDay'),
-      btnNextDay: $('#btnNextDay'),
-      totalCal: $('#totalCal'),
-      totalProt: $('#totalProt'),
-      protCard: $('#protCard'),
-      protSub: $('#protSub'),
-      calSub: $('#calSub'),
-      balance: $('#balance'),
-      balanceCard: $('#balanceCard'),
-      weightLoss: $('#weightLoss'),
-      bsumNote: $('#bsumNote'),
-      profileWeight: $('#profileWeight'),
-      profileAge: $('#profileAge'),
-      profileWaist: $('#profileWaist'),
-      exerciseBurn: $('#exerciseBurn'),
-      workoutProgram: $('#workoutProgram'),
-      mealInput: $('#mealInput'),
-      mealTime: $('#mealTime'),
-      btnAddMeal: $('#btnAddMeal'),
-      mealList: $('#mealList'),
-      mealCount: $('#mealCount'),
-      emptyMeals: $('#emptyMeals'),
+      blocksContainer: $('#blocksContainer'),
+      periodGrid: $('#periodGrid'),
+      datePicker: $('#datePicker'), dateLabel: $('#dateLabel'),
+      btnPrevDay: $('#btnPrevDay'), btnNextDay: $('#btnNextDay'),
+      totalCal: $('#totalCal'), totalProt: $('#totalProt'), protCard: $('#protCard'), protSub: $('#protSub'),
+      calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'),
+      weightLoss: $('#weightLoss'), bsumNote: $('#bsumNote'),
+      profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
+      exerciseBurn: $('#exerciseBurn'), workoutProgram: $('#workoutProgram'),
+      mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
+      mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
-      weightChart: $('#weightChart'),
-      editOverlay: $('#editOverlay'),
-      editMealInput: $('#editMealInput'),
-      editMealTime: $('#editMealTime'),
-      btnCancelEdit: $('#btnCancelEdit'),
-      btnSaveEdit: $('#btnSaveEdit'),
-      settingsOverlay: $('#settingsOverlay'),
-      proteinMultiplier: $('#proteinMultiplier'),
-      templateEditor: $('#templateEditor'),
-      btnAddTemplate: $('#btnAddTemplate'),
-      btnEditProtein: $('#btnEditProtein'),
-      btnSettings: $('#btnSettings'),
-      btnTheme: $('#btnTheme'),
-      btnCancelSettings: $('#btnCancelSettings'),
-      btnSaveSettings: $('#btnSaveSettings'),
-      btnExport: $('#btnExport'),
-      btnImport: $('#btnImport'),
-      importFile: $('#importFile'),
+      weightChart: $('#weightChart'), balanceChart: $('#balanceChart'),
+      weightLogList: $('#weightLogList'),
+      editOverlay: $('#editOverlay'), editMealInput: $('#editMealInput'), editMealTime: $('#editMealTime'),
+      btnCancelEdit: $('#btnCancelEdit'), btnSaveEdit: $('#btnSaveEdit'),
+      weightHistoryOverlay: $('#weightHistoryOverlay'),
+      btnWeightHistory: $('#btnWeightHistory'), btnCloseWeightHistory: $('#btnCloseWeightHistory'),
+      btnSaveWeightHistory: $('#btnSaveWeightHistory'),
+      settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
+      templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
+      btnEditProtein: $('#btnEditProtein'), btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
+      btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
+      btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
       toast: $('#toast'),
     };
 
-    function todayStr() {
-      return new Date().toISOString().slice(0, 10);
-    }
-
+    function todayStr() { return new Date().toISOString().slice(0, 10); }
     function nowTimeStr() {
       const n = new Date();
       return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
     }
-
-    function shiftDate(dateStr, days) {
-      const d = new Date(dateStr + 'T12:00:00');
-      d.setDate(d.getDate() + days);
-      return d.toISOString().slice(0, 10);
+    function shiftDate(d, n) {
+      const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10);
     }
-
-    function formatDateLabel(dateStr) {
-      if (dateStr === todayStr()) return 'วันนี้';
-      return new Date(dateStr + 'T12:00:00').toLocaleDateString('th-TH', {
-        weekday: 'short', day: 'numeric', month: 'short',
-      });
+    function formatDateLabel(d) {
+      if (d === todayStr()) return 'วันนี้';
+      return new Date(d + 'T12:00:00').toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
     }
-
-    function formatTimeDisplay(time) {
-      if (!time) return '';
-      const [h, m] = time.split(':');
-      return parseInt(h, 10) + ':' + m;
-    }
-
-    function storageKey(dateStr) {
-      return STORAGE_PREFIX + dateStr;
-    }
+    function formatTimeDisplay(t) { if (!t) return ''; const [h, m] = t.split(':'); return parseInt(h, 10) + ':' + m; }
+    function storageKey(d) { return STORAGE_PREFIX + d; }
 
     function defaultSettings() {
       return {
-        proteinMultiplier: DEFAULT_PROTEIN_MULT,
-        theme: 'dark',
+        proteinMultiplier: DEFAULT_PROTEIN_MULT, theme: 'dark',
+        sectionOrder: [...DEFAULT_BLOCK_ORDER],
         templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
-        profile: { weight: '', age: '', waist: '' },
+        profile: { weight: '', age: '', waist: '', weightLog: {} },
       };
     }
 
@@ -695,19 +502,22 @@
         const raw = localStorage.getItem(SETTINGS_KEY);
         if (!raw) return defaultSettings();
         const s = JSON.parse(raw);
+        const order = Array.isArray(s.sectionOrder) ? s.sectionOrder : [...DEFAULT_BLOCK_ORDER];
+        const merged = [...order];
+        DEFAULT_BLOCK_ORDER.forEach((id) => { if (!merged.includes(id)) merged.push(id); });
         return {
           proteinMultiplier: parseFloat(s.proteinMultiplier) || DEFAULT_PROTEIN_MULT,
           theme: s.theme === 'light' ? 'light' : 'dark',
+          sectionOrder: merged,
           templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
           profile: {
             weight: s.profile?.weight ?? '',
             age: s.profile?.age ?? '',
             waist: s.profile?.waist ?? '',
+            weightLog: s.profile?.weightLog && typeof s.profile.weightLog === 'object' ? s.profile.weightLog : {},
           },
         };
-      } catch {
-        return defaultSettings();
-      }
+      } catch { return defaultSettings(); }
     }
 
     function saveSettings(partial) {
@@ -717,17 +527,40 @@
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     }
 
-    function defaultDayData() {
-      return { exerciseBurn: '', workoutProgram: '', meals: [] };
+    function getWeightLog() { return loadSettings().profile.weightLog || {}; }
+
+    function setWeightLogEntry(date, weight) {
+      const log = { ...getWeightLog() };
+      const w = parseFloat(weight);
+      if (isNaN(w) || w <= 0) delete log[date];
+      else log[date] = w;
+      const profile = { ...loadSettings().profile, weightLog: log };
+      profile.weight = String(getLatestWeightFromLog(log) || profile.weight || '');
+      saveSettings({ profile });
     }
 
-    function migrateMeal(meal) {
-      return {
-        id: meal.id || crypto.randomUUID(),
-        calories: meal.calories,
-        protein: meal.protein,
-        time: meal.time || '12:00',
-      };
+    function getLatestWeightFromLog(log) {
+      const dates = Object.keys(log).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+      const today = todayStr();
+      const valid = dates.filter((d) => d <= today);
+      if (!valid.length) return null;
+      return parseFloat(log[valid[valid.length - 1]]);
+    }
+
+    function getWeightOnDate(date) {
+      const log = getWeightLog();
+      if (log[date]) return parseFloat(log[date]);
+      const sorted = Object.keys(log).filter((d) => d <= date).sort();
+      if (sorted.length) return parseFloat(log[sorted[sorted.length - 1]]);
+      const legacy = loadDay(date)._legacyWeight;
+      const lw = parseFloat(legacy);
+      return !isNaN(lw) && lw > 0 ? lw : 0;
+    }
+
+    function defaultDayData() { return { exerciseBurn: '', workoutProgram: '', meals: [] }; }
+
+    function migrateMeal(m) {
+      return { id: m.id || crypto.randomUUID(), calories: m.calories, protein: m.protein, time: m.time || '12:00' };
     }
 
     function loadDay(dateStr) {
@@ -735,103 +568,58 @@
         const raw = localStorage.getItem(storageKey(dateStr));
         if (!raw) return defaultDayData();
         const data = JSON.parse(raw);
-        const meals = Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [];
         return {
-          exerciseBurn: data.exerciseBurn ?? '',
-          workoutProgram: data.workoutProgram ?? '',
-          meals,
+          exerciseBurn: data.exerciseBurn ?? '', workoutProgram: data.workoutProgram ?? '',
+          meals: Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [],
           _legacyWeight: data.weight ?? '',
         };
-      } catch {
-        return defaultDayData();
-      }
+      } catch { return defaultDayData(); }
     }
 
     function saveDay(dateStr, data) {
-      const toSave = {
-        exerciseBurn: data.exerciseBurn ?? '',
-        workoutProgram: data.workoutProgram ?? '',
-        meals: data.meals ?? [],
-      };
-      localStorage.setItem(storageKey(dateStr), JSON.stringify(toSave));
-    }
-
-    function getEffectiveWeight(forDate) {
-      const profileW = parseFloat(loadSettings().profile.weight);
-      if (!isNaN(profileW) && profileW > 0) return profileW;
-
-      for (let i = 0; i < 400; i++) {
-        const d = shiftDate(forDate, -i);
-        const day = loadDay(d);
-        const w = parseFloat(day._legacyWeight);
-        if (!isNaN(w) && w > 0) return w;
-      }
-      return 0;
+      localStorage.setItem(storageKey(dateStr), JSON.stringify({
+        exerciseBurn: data.exerciseBurn ?? '', workoutProgram: data.workoutProgram ?? '', meals: data.meals ?? [],
+      }));
     }
 
     function runMigration() {
       const settings = loadSettings();
-      let profileUpdated = false;
-
+      const log = { ...settings.profile.weightLog };
+      let changed = false;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (!key || !key.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
+        if (!key?.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
         const dateStr = key.slice(STORAGE_PREFIX.length);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
         const day = loadDay(dateStr);
-        if (day._legacyWeight && !settings.profile.weight) {
-          settings.profile.weight = day._legacyWeight;
-          profileUpdated = true;
+        if (day._legacyWeight && !log[dateStr]) {
+          log[dateStr] = parseFloat(day._legacyWeight);
+          changed = true;
         }
         saveDay(dateStr, day);
       }
-
-      if (profileUpdated) saveSettings({ profile: settings.profile });
+      if (changed || !settings.profile.weight) {
+        const latest = getLatestWeightFromLog(log);
+        saveSettings({ profile: { ...settings.profile, weightLog: log, weight: latest ? String(latest) : settings.profile.weight } });
+      }
     }
 
     function getFormData() {
-      return {
-        exerciseBurn: els.exerciseBurn.value,
-        workoutProgram: els.workoutProgram.value,
-        meals: loadDay(currentDate).meals,
-      };
+      return { exerciseBurn: els.exerciseBurn.value, workoutProgram: els.workoutProgram.value, meals: loadDay(currentDate).meals };
     }
-
-    function persistForm() {
-      saveDay(currentDate, getFormData());
-    }
-
-    function persistProfile() {
-      saveSettings({
-        profile: {
-          weight: els.profileWeight.value,
-          age: els.profileAge.value,
-          waist: els.profileWaist.value,
-        },
-      });
-    }
+    function persistForm() { saveDay(currentDate, getFormData()); }
 
     function parseMealInput(text) {
-      const trimmed = text.trim();
-      if (!trimmed) return null;
-      const parts = trimmed.split(',').map((s) => s.trim());
-      if (parts.length !== 2) return null;
-      const calories = parseFloat(parts[0]);
-      const protein = parseFloat(parts[1]);
+      const p = text.trim().split(',').map((s) => s.trim());
+      if (p.length !== 2) return null;
+      const calories = parseFloat(p[0]), protein = parseFloat(p[1]);
       if (isNaN(calories) || isNaN(protein) || calories < 0 || protein < 0) return null;
       return { calories, protein };
     }
 
-    function calcBMR(weight) {
-      const w = parseFloat(weight);
-      if (isNaN(w) || w <= 0) return 0;
-      return w * BMR_MULTIPLIER;
-    }
-
-    function getProteinTarget(weight) {
-      const w = parseFloat(weight);
-      if (isNaN(w) || w <= 0) return 0;
-      return Math.round(w * loadSettings().proteinMultiplier * 10) / 10;
+    function calcBMR(w) { const x = parseFloat(w); return isNaN(x) || x <= 0 ? 0 : x * BMR_MULTIPLIER; }
+    function getProteinTarget(w) {
+      const x = parseFloat(w); return isNaN(x) || x <= 0 ? 0 : Math.round(x * loadSettings().proteinMultiplier * 10) / 10;
     }
 
     function calculate(data, weight) {
@@ -841,437 +629,365 @@
       const exercise = parseFloat(data.exerciseBurn) || 0;
       const bsum = baseBMR + exercise;
       const balance = totalCal - bsum;
-      const weightLoss = bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0;
-      const proteinTarget = getProteinTarget(weight);
-      return { totalCal, totalProt, baseBMR, exercise, bsum, balance, weightLoss, proteinTarget };
+      return {
+        totalCal, totalProt, baseBMR, exercise, bsum, balance,
+        weightLoss: bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0,
+        proteinTarget: getProteinTarget(weight),
+      };
     }
 
-    function getDateRange(endDate, days) {
-      const dates = [];
-      for (let i = days - 1; i >= 0; i--) dates.push(shiftDate(endDate, -i));
-      return dates;
+    function getDateRange(end, days) {
+      const a = []; for (let i = days - 1; i >= 0; i--) a.push(shiftDate(end, -i)); return a;
     }
 
-    function getWeightOnDate(date) {
-      const day = loadDay(date);
-      const legacy = parseFloat(day._legacyWeight);
-      if (!isNaN(legacy) && legacy > 0) return legacy;
-      return getEffectiveWeight(date);
-    }
-
-    function formatWeightChange(delta) {
-      if (delta === null) return { text: '—', cls: 'neutral' };
-      const r = Math.round(delta * 10) / 10;
+    function formatWC(d) {
+      if (d === null) return { text: '—', cls: 'neutral' };
+      const r = Math.round(d * 10) / 10;
       if (r < 0) return { text: '↓' + Math.abs(r), cls: 'good' };
       if (r > 0) return { text: '↑' + r, cls: 'bad' };
       return { text: '—', cls: 'neutral' };
     }
-
-    function formatBalance(total) {
-      if (total === 0) return { text: '—', cls: 'neutral' };
-      const r = Math.round(total);
+    function formatBal(t) {
+      if (!t) return { text: '—', cls: 'neutral' };
+      const r = Math.round(t);
       if (r < 0) return { text: '↓' + Math.abs(r), cls: 'good' };
       if (r > 0) return { text: '↑' + r, cls: 'bad' };
       return { text: '0', cls: 'neutral' };
     }
-
-    function formatProteinShortfall(totalShortfall, daysWithMeals) {
-      if (daysWithMeals === 0) return { text: '—', cls: 'neutral' };
-      const r = Math.round(totalShortfall);
-      if (r > 0) return { text: '↓' + r + 'g', cls: 'bad' };
-      return { text: '✓', cls: 'good' };
+    function formatProt(sf, days) {
+      if (!days) return { text: '—', cls: 'neutral' };
+      const r = Math.round(sf);
+      return r > 0 ? { text: '↓' + r, cls: 'bad' } : { text: '✓', cls: 'good' };
     }
 
-    function calcPeriodSummary(endDate, periodDays) {
-      const dates = getDateRange(endDate, periodDays);
+    function calcPeriodSummary(endDate, days) {
       const mult = loadSettings().proteinMultiplier;
-      let startWeight = null;
-      let endWeight = null;
-      let totalBalance = 0;
-      let totalProteinShortfall = 0;
-      let daysWithMeals = 0;
-
-      dates.forEach((date) => {
-        const data = loadDay(date);
-        const w = getWeightOnDate(date);
-        const stats = calculate(data, w);
-
-        if (w > 0) {
-          if (startWeight === null) startWeight = w;
-          endWeight = w;
-        }
-
-        if (data.meals.length > 0) {
-          daysWithMeals++;
-          totalBalance += stats.balance;
-          const target = w > 0 ? w * mult : (endWeight || 0) * mult;
-          if (target > 0 && stats.totalProt < target) {
-            totalProteinShortfall += target - stats.totalProt;
-          }
-        } else if (data.exerciseBurn) {
-          totalBalance += stats.balance;
-        }
+      let sw = null, ew = null, tb = 0, tps = 0, dm = 0;
+      getDateRange(endDate, days).forEach((date) => {
+        const data = loadDay(date), w = getWeightOnDate(date), st = calculate(data, w);
+        if (w > 0) { if (sw === null) sw = w; ew = w; }
+        if (data.meals.length) {
+          dm++; tb += st.balance;
+          const tgt = w > 0 ? w * mult : (ew || 0) * mult;
+          if (tgt > 0 && st.totalProt < tgt) tps += tgt - st.totalProt;
+        } else if (data.exerciseBurn) tb += st.balance;
       });
-
-      return {
-        weightChange: startWeight !== null && endWeight !== null ? endWeight - startWeight : null,
-        totalBalance,
-        totalProteinShortfall,
-        daysWithMeals,
-      };
+      return { weightChange: sw !== null && ew !== null ? ew - sw : null, totalBalance: tb, totalProteinShortfall: tps, daysWithMeals: dm };
     }
 
     function renderPeriodSummary() {
-      const endDate = currentDate <= todayStr() ? currentDate : todayStr();
-      els.periodScroll.innerHTML = '';
-
+      const end = currentDate <= todayStr() ? currentDate : todayStr();
+      els.periodGrid.innerHTML = '';
       PERIODS.forEach(({ days, label }) => {
-        const s = calcPeriodSummary(endDate, days);
-        const w = formatWeightChange(s.weightChange);
-        const c = formatBalance(s.totalBalance);
-        const p = formatProteinShortfall(s.totalProteinShortfall, s.daysWithMeals);
-
+        const s = calcPeriodSummary(end, days);
+        const w = formatWC(s.weightChange), c = formatBal(s.totalBalance), p = formatProt(s.totalProteinShortfall, s.daysWithMeals);
         const card = document.createElement('div');
         card.className = 'period-card';
-        card.innerHTML =
-          '<div class="period-label">' + label + '</div>'
-          + '<div class="period-stat">กก.<span class="val ' + w.cls + '">' + w.text + '</span></div>'
-          + '<div class="period-stat">แคล<span class="val ' + c.cls + '">' + c.text + '</span></div>'
-          + '<div class="period-stat">prot<span class="val ' + p.cls + '">' + p.text + '</span></div>';
-        els.periodScroll.appendChild(card);
+        card.innerHTML = '<div class="period-label">' + label + '</div>'
+          + '<div class="period-stat">W<span class="val ' + w.cls + '">' + w.text + '</span></div>'
+          + '<div class="period-stat">C<span class="val ' + c.cls + '">' + c.text + '</span></div>'
+          + '<div class="period-stat">P<span class="val ' + p.cls + '">' + p.text + '</span></div>';
+        els.periodGrid.appendChild(card);
       });
     }
 
-    function renderDashboard(stats) {
-      els.totalCal.textContent = Math.round(stats.totalCal);
-
-      const protRounded = Math.round(stats.totalProt * 10) / 10;
-      els.totalProt.textContent = protRounded;
-
-      const target = stats.proteinTarget;
-      if (target > 0) {
-        els.protSub.textContent = '/ ' + target + 'g';
-        const below = protRounded < target;
-        els.protCard.classList.toggle('bad', below);
-      } else {
-        els.protSub.textContent = '/ — g';
-        els.protCard.classList.remove('bad');
-      }
-
-      const balRounded = Math.round(stats.balance);
-      els.balance.textContent = (balRounded > 0 ? '+' : '') + balRounded;
-      els.balanceCard.classList.toggle('neg', stats.balance < 0);
-      els.balanceCard.classList.toggle('pos', stats.balance > 0);
-
-      if (stats.balance < 0) {
-        els.calSub.textContent = 'ขาด ' + Math.abs(balRounded);
-      } else if (stats.balance > 0) {
-        els.calSub.textContent = 'เกิน ' + balRounded;
-      } else {
-        els.calSub.textContent = 'kcal';
-      }
-
-      const wl = stats.weightLoss;
-      els.weightLoss.value = (wl >= 0 ? '+' : '') + (Math.round(wl * 1000) / 1000);
-
-      const w = getEffectiveWeight(currentDate);
-      if (w > 0) {
-        els.bsumNote.innerHTML =
-          'Bsum <strong>' + Math.round(stats.bsum) + '</strong> kcal = BMR '
-          + Math.round(stats.baseBMR) + ' (' + w + '×' + BMR_MULTIPLIER + ') + ออกกำลัง '
-          + Math.round(stats.exercise);
-      } else {
-        els.bsumNote.innerHTML = 'กรอกน้ำหนักในโปรไฟล์เพื่อคำนวณ BMR';
-      }
+    function renderDashboard(st) {
+      els.totalCal.textContent = Math.round(st.totalCal);
+      const pr = Math.round(st.totalProt * 10) / 10;
+      els.totalProt.textContent = pr;
+      if (st.proteinTarget > 0) {
+        els.protSub.textContent = '/ ' + st.proteinTarget + 'g';
+        els.protCard.classList.toggle('bad', pr < st.proteinTarget);
+      } else { els.protSub.textContent = '/ —g'; els.protCard.classList.remove('bad'); }
+      const br = Math.round(st.balance);
+      els.balance.textContent = (br > 0 ? '+' : '') + br;
+      els.balanceCard.classList.toggle('neg', st.balance < 0);
+      els.balanceCard.classList.toggle('pos', st.balance > 0);
+      els.calSub.textContent = st.balance < 0 ? 'ขาด' + Math.abs(br) : st.balance > 0 ? 'เกิน' + br : 'kcal';
+      els.weightLoss.value = (st.weightLoss >= 0 ? '+' : '') + (Math.round(st.weightLoss * 1000) / 1000);
+      const w = getWeightOnDate(currentDate);
+      els.bsumNote.innerHTML = w > 0
+        ? 'Bsum <strong>' + Math.round(st.bsum) + '</strong> = BMR ' + Math.round(st.baseBMR) + ' + ออกกำลัง ' + Math.round(st.exercise)
+        : 'กรอกน้ำหนักเพื่อคำนวณ BMR';
     }
 
     function renderMeals(meals) {
       els.mealCount.textContent = meals.length;
       els.btnAddMeal.disabled = meals.length >= MAX_MEALS;
-      els.emptyMeals.style.display = meals.length === 0 ? 'block' : 'none';
+      els.emptyMeals.style.display = meals.length ? 'none' : 'block';
       els.mealList.innerHTML = '';
-
-      const sorted = [...meals].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-
-      sorted.forEach((meal, idx) => {
+      [...meals].sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((m) => {
         const li = document.createElement('li');
         li.className = 'meal-item';
-        li.innerHTML =
-          '<div class="meal-info">'
-          + '<div class="meal-nums">' + Math.round(meal.calories) + ' kcal · ' + meal.protein + 'g</div>'
-          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(meal.time) + '</div>'
-          + '</div>'
-          + '<div class="meal-actions">'
-          + '<button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + meal.id + '">✎</button>'
-          + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + meal.id + '">✕</button>'
-          + '</div>';
+        li.innerHTML = '<div class="meal-info"><div class="meal-nums">' + Math.round(m.calories) + ' · ' + m.protein + 'g</div>'
+          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(m.time) + '</div></div>'
+          + '<div><button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + m.id + '">✎</button>'
+          + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + m.id + '">✕</button></div>';
         els.mealList.appendChild(li);
       });
     }
 
+    function drawLineChart(canvas, points, colorVar) {
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+      if (points.length < 2) {
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+        ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('ข้อมูลไม่พอ', w / 2, h / 2); return;
+      }
+      const vals = points.map((p) => p.v);
+      const min = Math.min(...vals), max = Math.max(...vals), range = max - min || 1, pad = 6;
+      const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = pad + (i / (points.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((p.v - min) / range) * (h - pad * 2);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function renderCharts() {
+      const end = currentDate <= todayStr() ? currentDate : todayStr();
+      const dates = getDateRange(end, 30);
+      const wPts = [], bPts = [];
+      dates.forEach((d) => {
+        const w = getWeightOnDate(d);
+        if (w > 0) wPts.push({ v: w });
+        const data = loadDay(d);
+        if (data.meals.length || data.exerciseBurn) bPts.push({ v: calculate(data, w).balance });
+      });
+      drawLineChart(els.weightChart, wPts, '--accent');
+      drawLineChart(els.balanceChart, bPts, '--warning');
+    }
+
+    function isWeightAnomaly(date, weight, log) {
+      const sorted = Object.keys(log).filter((d) => d !== date && /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+      const prev = sorted.filter((d) => d < date).pop();
+      const next = sorted.find((d) => d > date);
+      const w = parseFloat(weight);
+      if (prev && Math.abs(w - parseFloat(log[prev])) > WEIGHT_ANOMALY_KG) return true;
+      if (next && Math.abs(w - parseFloat(log[next])) > WEIGHT_ANOMALY_KG) return true;
+      return false;
+    }
+
+    function openWeightHistory() {
+      const log = getWeightLog();
+      const dates = Object.keys(log).sort().reverse();
+      els.weightLogList.innerHTML = '';
+      if (!dates.length) {
+        els.weightLogList.innerHTML = '<li class="hint" style="padding:1rem">ยังไม่มีประวัติ — กรอกน้ำหนักเพื่อบันทึก</li>';
+      }
+      dates.forEach((date) => {
+        const li = document.createElement('li');
+        li.className = 'weight-log-item' + (isWeightAnomaly(date, log[date], log) ? ' anomaly' : '');
+        li.dataset.date = date;
+        li.innerHTML = '<span class="wl-date">' + formatDateLabel(date) + '<br><small style="color:var(--muted)">' + date + '</small></span>'
+          + '<input type="number" step="0.1" value="' + log[date] + '" data-wl-input>'
+          + '<button type="button" class="btn btn-danger btn-icon" data-wl-del>✕</button>';
+        els.weightLogList.appendChild(li);
+      });
+      els.weightHistoryOverlay.classList.add('open');
+    }
+
+    function saveWeightHistory() {
+      const log = { ...getWeightLog() };
+      els.weightLogList.querySelectorAll('.weight-log-item').forEach((li) => {
+        const date = li.dataset.date;
+        if (li.dataset.deleted) { delete log[date]; return; }
+        const inp = li.querySelector('[data-wl-input]');
+        const w = parseFloat(inp.value);
+        if (!isNaN(w) && w > 0) log[date] = w; else delete log[date];
+      });
+      const profile = { ...loadSettings().profile, weightLog: log };
+      profile.weight = String(getLatestWeightFromLog(log) || '');
+      saveSettings({ profile });
+      els.weightHistoryOverlay.classList.remove('open');
+      refresh();
+      showToast('บันทึกประวัติน้ำหนักแล้ว', 'success');
+    }
+
     function renderTemplates() {
-      const templates = loadSettings().templates;
       els.templateChips.innerHTML = '';
-      templates.forEach((t) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'chip';
-        btn.textContent = t.label;
-        btn.addEventListener('click', () => {
-          els.mealInput.value = t.calories + ',' + t.protein;
-          els.mealInput.focus();
-        });
-        els.templateChips.appendChild(btn);
+      loadSettings().templates.forEach((t) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
+        b.onclick = () => { els.mealInput.value = t.calories + ',' + t.protein; els.mealInput.focus(); };
+        els.templateChips.appendChild(b);
       });
     }
 
     function renderTemplateEditor() {
-      const templates = loadSettings().templates;
       els.templateEditor.innerHTML = '';
-      templates.forEach((t, i) => {
+      loadSettings().templates.forEach((t, i) => {
         const row = document.createElement('div');
-        row.className = 'field-row';
-        row.style.marginBottom = '0.5rem';
-        row.innerHTML =
-          '<input type="text" data-tpl="label" data-i="' + i + '" value="' + escapeAttr(t.label) + '" placeholder="ชื่อ" style="font-size:14px;padding:0.4rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
-          + '<input type="text" data-tpl="val" data-i="' + i + '" value="' + t.calories + ',' + t.protein + '" placeholder="Cal,Prot" style="font-size:14px;padding:0.4rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
+        row.className = 'field-row'; row.style.marginBottom = '0.4rem';
+        row.innerHTML = '<input data-tpl="label" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-tpl="val" data-i="' + i + '" value="' + t.calories + ',' + t.protein + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
         els.templateEditor.appendChild(row);
       });
     }
 
-    function escapeAttr(s) {
-      return String(s).replace(/"/g, '&quot;');
-    }
-
     function readTemplateEditor() {
       const templates = [];
-      const labels = els.templateEditor.querySelectorAll('[data-tpl="label"]');
-      labels.forEach((el) => {
-        const i = parseInt(el.dataset.i, 10);
-        const valEl = els.templateEditor.querySelector('[data-tpl="val"][data-i="' + i + '"]');
-        const parsed = parseMealInput(valEl?.value || '');
-        if (parsed && el.value.trim()) {
-          templates.push({
-            id: 't' + Date.now() + i,
-            label: el.value.trim(),
-            calories: parsed.calories,
-            protein: parsed.protein,
-          });
-        }
+      els.templateEditor.querySelectorAll('[data-tpl="label"]').forEach((el) => {
+        const i = el.dataset.i;
+        const val = els.templateEditor.querySelector('[data-tpl="val"][data-i="' + i + '"]');
+        const p = parseMealInput(val?.value || '');
+        if (p && el.value.trim()) templates.push({ id: 't' + Date.now() + i, label: el.value.trim(), ...p });
       });
       return templates;
     }
 
-    function renderWeightChart() {
-      const canvas = els.weightChart;
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.scale(dpr, dpr);
-      ctx.clearRect(0, 0, w, h);
-
-      const endDate = currentDate <= todayStr() ? currentDate : todayStr();
-      const dates = getDateRange(endDate, 30);
-      const points = [];
-
-      dates.forEach((date) => {
-        const wt = getWeightOnDate(date);
-        if (wt > 0) points.push({ date, wt });
+    function applyBlockOrder() {
+      const order = loadSettings().sectionOrder || DEFAULT_BLOCK_ORDER;
+      order.forEach((id) => {
+        const el = els.blocksContainer.querySelector('[data-block-id="' + id + '"]');
+        if (el) els.blocksContainer.appendChild(el);
       });
-
-      if (points.length < 2) {
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-        ctx.font = '11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('กราฟน้ำหนัก (ต้องมี 2 จุดขึ้นไป)', w / 2, h / 2);
-        return;
-      }
-
-      const weights = points.map((p) => p.wt);
-      const minW = Math.min(...weights) - 0.5;
-      const maxW = Math.max(...weights) + 0.5;
-      const range = maxW - minW || 1;
-      const pad = 8;
-
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-
-      points.forEach((p, i) => {
-        const x = pad + (i / (points.length - 1)) * (w - pad * 2);
-        const y = h - pad - ((p.wt - minW) / range) * (h - pad * 2);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      points.forEach((p, i) => {
-        const x = pad + (i / (points.length - 1)) * (w - pad * 2);
-        const y = h - pad - ((p.wt - minW) / range) * (h - pad * 2);
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(minW.toFixed(1) + ' kg', 4, h - 2);
-      ctx.textAlign = 'right';
-      ctx.fillText(maxW.toFixed(1) + ' kg', w - 4, 12);
     }
 
-    function hapticSuccess() {
-      if (navigator.vibrate) navigator.vibrate(50);
+    function initDragReorder() {
+      els.blocksContainer.querySelectorAll('.sortable-block').forEach((block) => {
+        const handle = block.querySelector('.drag-handle');
+        handle.addEventListener('touchstart', (e) => startDrag(e, block), { passive: false });
+        handle.addEventListener('mousedown', (e) => startDrag(e, block));
+      });
+      document.addEventListener('touchmove', onDragMove, { passive: false });
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('touchend', endDrag);
+      document.addEventListener('mouseup', endDrag);
+    }
+
+    function startDrag(e, block) {
+      e.preventDefault();
+      dragState = { block, id: block.dataset.blockId };
+      block.classList.add('dragging');
+    }
+
+    function onDragMove(e) {
+      if (!dragState) return;
+      e.preventDefault();
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      els.blocksContainer.querySelectorAll('.sortable-block').forEach((b) => {
+        b.classList.remove('drag-over');
+        if (b === dragState.block) return;
+        const r = b.getBoundingClientRect();
+        if (y > r.top && y < r.bottom) {
+          b.classList.add('drag-over');
+          const after = y > r.top + r.height / 2;
+          if (after) b.after(dragState.block); else b.before(dragState.block);
+        }
+      });
+    }
+
+    function endDrag() {
+      if (!dragState) return;
+      dragState.block.classList.remove('dragging');
+      els.blocksContainer.querySelectorAll('.sortable-block').forEach((b) => b.classList.remove('drag-over'));
+      const order = [...els.blocksContainer.querySelectorAll('.sortable-block')].map((b) => b.dataset.blockId);
+      saveSettings({ sectionOrder: order });
+      dragState = null;
     }
 
     function refresh() {
       const profile = loadSettings().profile;
-      els.profileWeight.value = profile.weight;
+      const dayWeight = getWeightOnDate(currentDate);
+      els.profileWeight.value = dayWeight > 0 ? dayWeight : profile.weight;
       els.profileAge.value = profile.age;
       els.profileWaist.value = profile.waist;
-
       const data = loadDay(currentDate);
       els.exerciseBurn.value = data.exerciseBurn;
       els.workoutProgram.value = data.workoutProgram;
-
-      const weight = getEffectiveWeight(currentDate);
+      const w = getWeightOnDate(currentDate);
       renderMeals(data.meals);
-      renderDashboard(calculate(data, weight));
+      renderDashboard(calculate(data, w));
       renderPeriodSummary();
       renderTemplates();
-      renderWeightChart();
+      renderCharts();
     }
 
-    function setDate(dateStr) {
-      currentDate = dateStr;
-      els.datePicker.value = dateStr;
-      els.dateLabel.textContent = formatDateLabel(dateStr);
-      els.btnNextDay.disabled = dateStr >= todayStr();
+    function setDate(d) {
+      currentDate = d;
+      els.datePicker.value = d;
+      els.dateLabel.textContent = formatDateLabel(d);
+      els.btnNextDay.disabled = d >= todayStr();
       els.mealTime.value = nowTimeStr();
       refresh();
     }
 
-    function addMeal(calories, protein, time) {
+    function addMeal(cal, prot, time) {
       const data = loadDay(currentDate);
-      if (data.meals.length >= MAX_MEALS) {
-        showToast('เพิ่มได้สูงสุด ' + MAX_MEALS + ' มื้อ', 'error');
-        return;
-      }
-      data.meals.push({
-        id: crypto.randomUUID(),
-        calories,
-        protein,
-        time: time || nowTimeStr(),
-      });
+      if (data.meals.length >= MAX_MEALS) { showToast('สูงสุด ' + MAX_MEALS + ' มื้อ', 'error'); return; }
+      data.meals.push({ id: crypto.randomUUID(), calories: cal, protein: prot, time: time || nowTimeStr() });
       saveDay(currentDate, { ...getFormData(), meals: data.meals });
-
-      const weight = getEffectiveWeight(currentDate);
-      const stats = calculate({ ...data, meals: data.meals }, weight);
-      if (stats.proteinTarget > 0 && stats.totalProt >= stats.proteinTarget) {
-        hapticSuccess();
-        showToast('ถึงเป้าโปรตีนแล้ว! 🎉', 'success');
+      const st = calculate({ ...data, meals: data.meals }, getWeightOnDate(currentDate));
+      if (st.proteinTarget > 0 && st.totalProt >= st.proteinTarget) {
+        if (navigator.vibrate) navigator.vibrate(50);
+        showToast('ถึงเป้าโปรตีน! 🎉', 'success');
       }
-
-      els.mealInput.value = '';
-      els.mealTime.value = nowTimeStr();
-      refresh();
+      els.mealInput.value = ''; els.mealTime.value = nowTimeStr(); refresh();
     }
 
     function handleAddMeal() {
-      const parsed = parseMealInput(els.mealInput.value);
-      if (!parsed) {
-        showToast('ใช้รูปแบบ Cal,Protein เช่น 450,30', 'error');
-        return;
-      }
-      addMeal(parsed.calories, parsed.protein, els.mealTime.value);
+      const p = parseMealInput(els.mealInput.value);
+      if (!p) { showToast('ใช้ Cal,Protein เช่น 450,30', 'error'); return; }
+      addMeal(p.calories, p.protein, els.mealTime.value);
     }
 
     function deleteMeal(id) {
       const data = loadDay(currentDate);
       data.meals = data.meals.filter((m) => m.id !== id);
-      saveDay(currentDate, { ...getFormData(), meals: data.meals });
-      refresh();
+      saveDay(currentDate, { ...getFormData(), meals: data.meals }); refresh();
     }
 
     function openEdit(id) {
-      const meal = loadDay(currentDate).meals.find((m) => m.id === id);
-      if (!meal) return;
+      const m = loadDay(currentDate).meals.find((x) => x.id === id);
+      if (!m) return;
       editingMealId = id;
-      els.editMealInput.value = meal.calories + ',' + meal.protein;
-      els.editMealTime.value = meal.time || '12:00';
+      els.editMealInput.value = m.calories + ',' + m.protein;
+      els.editMealTime.value = m.time || '12:00';
       els.editOverlay.classList.add('open');
     }
-
-    function closeEdit() {
-      editingMealId = null;
-      els.editOverlay.classList.remove('open');
-    }
-
+    function closeEdit() { editingMealId = null; els.editOverlay.classList.remove('open'); }
     function saveEdit() {
-      const parsed = parseMealInput(els.editMealInput.value);
-      if (!parsed) {
-        showToast('ใช้รูปแบบ Cal,Protein', 'error');
-        return;
-      }
+      const p = parseMealInput(els.editMealInput.value);
+      if (!p) { showToast('รูปแบบไม่ถูกต้อง', 'error'); return; }
       const data = loadDay(currentDate);
-      const meal = data.meals.find((m) => m.id === editingMealId);
-      if (!meal) { closeEdit(); return; }
-      meal.calories = parsed.calories;
-      meal.protein = parsed.protein;
-      meal.time = els.editMealTime.value || '12:00';
-      saveDay(currentDate, { ...getFormData(), meals: data.meals });
-      closeEdit();
-      refresh();
+      const m = data.meals.find((x) => x.id === editingMealId);
+      if (!m) { closeEdit(); return; }
+      Object.assign(m, p, { time: els.editMealTime.value || '12:00' });
+      saveDay(currentDate, { ...getFormData(), meals: data.meals }); closeEdit(); refresh();
     }
 
-    function openSettings() {
-      els.proteinMultiplier.value = loadSettings().proteinMultiplier;
-      renderTemplateEditor();
-      els.settingsOverlay.classList.add('open');
-    }
-
-    function closeSettings() {
-      els.settingsOverlay.classList.remove('open');
-    }
-
+    function openSettings() { els.proteinMultiplier.value = loadSettings().proteinMultiplier; renderTemplateEditor(); els.settingsOverlay.classList.add('open'); }
+    function closeSettings() { els.settingsOverlay.classList.remove('open'); }
     function saveAllSettings() {
       const mult = parseFloat(els.proteinMultiplier.value);
-      if (isNaN(mult) || mult < 0.5 || mult > 3) {
-        showToast('ตัวคูณ 0.5 – 3.0', 'error');
-        return;
-      }
-      const templates = readTemplateEditor();
-      saveSettings({ proteinMultiplier: mult, templates: templates.length ? templates : loadSettings().templates });
-      closeSettings();
-      refresh();
+      if (isNaN(mult) || mult < 0.5 || mult > 3) { showToast('ตัวคูณ 0.5–3.0', 'error'); return; }
+      const tpl = readTemplateEditor();
+      saveSettings({ proteinMultiplier: mult, templates: tpl.length ? tpl : loadSettings().templates });
+      closeSettings(); refresh();
     }
 
-    function applyTheme(theme) {
-      document.documentElement.dataset.theme = theme;
-      saveSettings({ theme });
-      els.btnTheme.textContent = theme === 'dark' ? '☀️' : '🌙';
-      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0f172a' : '#f1f5f9';
+    function applyTheme(t) {
+      document.documentElement.dataset.theme = t;
+      saveSettings({ theme: t });
+      els.btnTheme.textContent = t === 'dark' ? '☀️' : '🌙';
+      $('meta[name="theme-color"]').content = t === 'dark' ? '#0f172a' : '#f1f5f9';
     }
 
     function exportData() {
-      const payload = { version: 2, exportedAt: new Date().toISOString(), data: {} };
+      const payload = { version: 3, exportedAt: new Date().toISOString(), data: {} };
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(STORAGE_PREFIX)) {
-          payload.data[key] = localStorage.getItem(key);
-        }
+        const k = localStorage.key(i);
+        if (k?.startsWith(STORAGE_PREFIX)) payload.data[k] = localStorage.getItem(k);
       }
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'calorie-tracker-backup-' + todayStr() + '.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+      a.download = 'calorie-backup-' + todayStr() + '.json'; a.click();
       showToast('Export สำเร็จ', 'success');
     }
 
@@ -1281,115 +997,88 @@
         try {
           const payload = JSON.parse(reader.result);
           const data = payload.data || payload;
-          if (typeof data !== 'object') throw new Error('invalid');
-          let count = 0;
-          Object.keys(data).forEach((key) => {
-            if (key.startsWith(STORAGE_PREFIX)) {
-              localStorage.setItem(key, typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]));
-              count++;
-            }
+          let n = 0;
+          Object.keys(data).forEach((k) => {
+            if (k.startsWith(STORAGE_PREFIX)) { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); n++; }
           });
-          runMigration();
-          refresh();
-          showToast('Import ' + count + ' รายการสำเร็จ', 'success');
-        } catch {
-          showToast('ไฟล์ไม่ถูกต้อง', 'error');
-        }
+          runMigration(); applyBlockOrder(); refresh();
+          showToast('Import ' + n + ' รายการ', 'success');
+        } catch { showToast('ไฟล์ไม่ถูกต้อง', 'error'); }
       };
       reader.readAsText(file);
     }
 
-    let toastTimer = null;
+    let toastTimer;
     function showToast(msg, type) {
       els.toast.textContent = msg;
       els.toast.className = 'toast show ' + (type || 'error');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2800);
+      toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2600);
     }
 
-    function toggleSection(id) {
-      document.getElementById(id).classList.toggle('collapsed');
-    }
-
-    els.btnPrevDay.addEventListener('click', () => setDate(shiftDate(currentDate, -1)));
-    els.btnNextDay.addEventListener('click', () => {
-      const next = shiftDate(currentDate, 1);
-      if (next <= todayStr()) setDate(next);
-    });
-
-    els.datePicker.addEventListener('change', () => {
-      const picked = els.datePicker.value;
-      if (picked && picked <= todayStr()) setDate(picked);
-      else els.datePicker.value = currentDate;
-    });
+    els.btnPrevDay.onclick = () => setDate(shiftDate(currentDate, -1));
+    els.btnNextDay.onclick = () => { const n = shiftDate(currentDate, 1); if (n <= todayStr()) setDate(n); };
+    els.datePicker.onchange = () => { const p = els.datePicker.value; if (p && p <= todayStr()) setDate(p); else els.datePicker.value = currentDate; };
 
     ['exerciseBurn', 'workoutProgram'].forEach((id) => {
-      document.getElementById(id).addEventListener('input', () => {
-        persistForm();
-        const weight = getEffectiveWeight(currentDate);
-        renderDashboard(calculate(getFormData(), weight));
-        renderPeriodSummary();
-      });
+      document.getElementById(id).oninput = () => { persistForm(); renderDashboard(calculate(getFormData(), getWeightOnDate(currentDate))); renderPeriodSummary(); renderCharts(); };
     });
 
-    ['profileWeight', 'profileAge', 'profileWaist'].forEach((id) => {
-      document.getElementById(id).addEventListener('input', () => {
-        persistProfile();
-        const weight = getEffectiveWeight(currentDate);
-        renderDashboard(calculate(getFormData(), weight));
-        renderPeriodSummary();
-        renderWeightChart();
-      });
+    els.profileWeight.oninput = () => {
+      const w = els.profileWeight.value;
+      setWeightLogEntry(currentDate, w);
+      refresh();
+    };
+    ['profileAge', 'profileWaist'].forEach((id) => {
+      document.getElementById(id).oninput = () => {
+        saveSettings({ profile: { ...loadSettings().profile, age: els.profileAge.value, waist: els.profileWaist.value } });
+      };
     });
 
-    els.btnAddMeal.addEventListener('click', handleAddMeal);
-    els.mealInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); handleAddMeal(); }
-    });
+    els.btnAddMeal.onclick = handleAddMeal;
+    els.mealInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddMeal(); } };
+    els.mealList.onclick = (e) => {
+      const b = e.target.closest('[data-action]');
+      if (!b) return;
+      if (b.dataset.action === 'edit') openEdit(b.dataset.id);
+      if (b.dataset.action === 'delete') deleteMeal(b.dataset.id);
+    };
+    els.btnCancelEdit.onclick = closeEdit;
+    els.btnSaveEdit.onclick = saveEdit;
+    els.editOverlay.onclick = (e) => { if (e.target === els.editOverlay) closeEdit(); };
 
-    els.mealList.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      if (btn.dataset.action === 'edit') openEdit(btn.dataset.id);
-      if (btn.dataset.action === 'delete') deleteMeal(btn.dataset.id);
-    });
+    els.btnWeightHistory.onclick = openWeightHistory;
+    els.btnCloseWeightHistory.onclick = () => els.weightHistoryOverlay.classList.remove('open');
+    els.btnSaveWeightHistory.onclick = saveWeightHistory;
+    els.weightLogList.onclick = (e) => {
+      const del = e.target.closest('[data-wl-del]');
+      if (del) { del.closest('.weight-log-item').dataset.deleted = '1'; del.closest('.weight-log-item').style.opacity = '0.35'; }
+    };
+    els.weightHistoryOverlay.onclick = (e) => { if (e.target === els.weightHistoryOverlay) els.weightHistoryOverlay.classList.remove('open'); };
 
-    els.btnCancelEdit.addEventListener('click', closeEdit);
-    els.btnSaveEdit.addEventListener('click', saveEdit);
-    els.editOverlay.addEventListener('click', (e) => { if (e.target === els.editOverlay) closeEdit(); });
+    els.btnEditProtein.onclick = openSettings;
+    els.btnSettings.onclick = openSettings;
+    els.btnCancelSettings.onclick = closeSettings;
+    els.btnSaveSettings.onclick = saveAllSettings;
+    els.settingsOverlay.onclick = (e) => { if (e.target === els.settingsOverlay) closeSettings(); };
+    els.btnAddTemplate.onclick = () => {
+      const t = loadSettings().templates;
+      t.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
+      saveSettings({ templates: t }); renderTemplateEditor();
+    };
+    els.btnTheme.onclick = () => { applyTheme(loadSettings().theme === 'dark' ? 'light' : 'dark'); renderCharts(); };
+    els.btnExport.onclick = exportData;
+    els.btnImport.onclick = () => els.importFile.click();
+    els.importFile.onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
+    $('#toggleDaily').onclick = () => $('#dailySection').classList.toggle('collapsed');
+    $('#toggleData').onclick = () => $('#dataSection').classList.toggle('collapsed');
 
-    els.btnEditProtein.addEventListener('click', openSettings);
-    els.btnSettings.addEventListener('click', openSettings);
-    els.btnCancelSettings.addEventListener('click', closeSettings);
-    els.btnSaveSettings.addEventListener('click', saveAllSettings);
-    els.settingsOverlay.addEventListener('click', (e) => { if (e.target === els.settingsOverlay) closeSettings(); });
-
-    els.btnAddTemplate.addEventListener('click', () => {
-      const templates = loadSettings().templates;
-      templates.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
-      saveSettings({ templates });
-      renderTemplateEditor();
-    });
-
-    els.btnTheme.addEventListener('click', () => {
-      applyTheme(loadSettings().theme === 'dark' ? 'light' : 'dark');
-      renderWeightChart();
-    });
-
-    els.btnExport.addEventListener('click', exportData);
-    els.btnImport.addEventListener('click', () => els.importFile.click());
-    els.importFile.addEventListener('change', (e) => {
-      if (e.target.files[0]) importData(e.target.files[0]);
-      e.target.value = '';
-    });
-
-    $('#toggleDaily').addEventListener('click', () => toggleSection('dailySection'));
-    $('#toggleData').addEventListener('click', () => toggleSection('dataSection'));
-
-    window.addEventListener('resize', renderWeightChart);
+    window.addEventListener('resize', renderCharts);
 
     runMigration();
     applyTheme(loadSettings().theme);
+    applyBlockOrder();
+    initDragReorder();
     els.mealTime.value = nowTimeStr();
     setDate(todayStr());
   </script>
