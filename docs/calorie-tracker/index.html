@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <title>Calorie & Protein Tracker</title>
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --bg: #0f172a;
       --surface: #1e293b;
       --surface-2: #334155;
@@ -19,79 +19,115 @@
       --danger: #f87171;
       --warning: #fbbf24;
       --protein: #a78bfa;
-      --radius: 14px;
-      --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      --radius: 12px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.3);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --surface: #fff;
+      --surface-2: #e2e8f0;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #0284c7;
+      --accent-dim: #0ea5e9;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.45;
       min-height: 100dvh;
-      padding-bottom: calc(1.5rem + var(--safe-bottom));
+      padding-bottom: calc(1rem + var(--safe-bottom));
     }
 
-    .app { max-width: 480px; margin: 0 auto; padding: 1rem; }
+    .app { max-width: 480px; margin: 0 auto; padding: 0.75rem; }
 
-    header { margin-bottom: 1rem; }
-    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
-    header p { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.65rem;
+    }
+
+    .top-bar h1 { font-size: 1.15rem; font-weight: 700; }
+    .top-actions { display: flex; gap: 0.35rem; }
+
+    .btn-sm {
+      background: var(--surface);
+      border: 1px solid var(--surface-2);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.35rem 0.55rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .btn-sm:active { opacity: 0.7; }
 
     .period-summary {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 0.85rem 0.75rem;
-      margin-bottom: 1rem;
+      padding: 0.55rem 0.5rem;
+      margin-bottom: 0.65rem;
       box-shadow: var(--shadow);
     }
 
     .period-summary .section-title {
-      margin-bottom: 0.65rem;
-      padding: 0 0.25rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0 0.25rem 0.4rem;
     }
 
-    .period-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
+    .period-scroll {
+      display: flex;
+      gap: 0.35rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 2px;
     }
+
+    .period-scroll::-webkit-scrollbar { display: none; }
 
     .period-card {
+      flex: 0 0 31%;
+      min-width: 96px;
       background: var(--bg);
-      border-radius: 10px;
-      padding: 0.6rem 0.5rem;
+      border-radius: 8px;
+      padding: 0.4rem 0.35rem;
       text-align: center;
-      min-width: 0;
     }
 
     .period-card .period-label {
-      font-size: 0.7rem;
+      font-size: 0.62rem;
       font-weight: 700;
       color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.45rem;
+      margin-bottom: 0.3rem;
+      white-space: nowrap;
     }
 
     .period-stat {
-      font-size: 0.68rem;
+      font-size: 0.58rem;
       color: var(--muted);
-      line-height: 1.35;
-      margin-bottom: 0.2rem;
+      line-height: 1.25;
+      margin-bottom: 0.12rem;
     }
-
-    .period-stat:last-child { margin-bottom: 0; }
 
     .period-stat .val {
       display: block;
-      font-size: 0.78rem;
+      font-size: 0.65rem;
       font-weight: 600;
       color: var(--text);
-      margin-top: 0.05rem;
     }
 
     .period-stat .val.good { color: var(--success); }
@@ -101,12 +137,11 @@
     .date-nav {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
+      gap: 0.4rem;
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 0.6rem 0.75rem;
-      margin-bottom: 1rem;
+      padding: 0.45rem 0.5rem;
+      margin-bottom: 0.65rem;
       box-shadow: var(--shadow);
     }
 
@@ -114,244 +149,231 @@
       background: var(--surface-2);
       border: none;
       color: var(--text);
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      font-size: 1.1rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-shrink: 0;
     }
 
-    .date-nav button:active { background: var(--border); }
-
-    .date-display { text-align: center; flex: 1; }
-
-    .date-display .label {
-      font-size: 0.75rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
+    .date-display { flex: 1; text-align: center; }
+    .date-display .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
     .date-display input[type="date"] {
       background: transparent;
       border: none;
       color: var(--text);
-      font-size: 1rem;
+      font-size: 16px;
       font-weight: 600;
       text-align: center;
       width: 100%;
-      cursor: pointer;
     }
-
-    .dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.85rem 1rem;
-      box-shadow: var(--shadow);
-    }
-
-    .stat-card.full { grid-column: 1 / -1; }
-
-    .stat-card .label-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.35rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .stat-card .label {
-      font-size: 0.72rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .stat-card .value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .stat-card .unit { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
-
-    .stat-card .sub {
-      font-size: 0.72rem;
-      color: var(--muted);
-      margin-top: 0.2rem;
-    }
-
-    .stat-card.cal .value { color: var(--warning); }
-    .stat-card.prot .value { color: var(--protein); }
-    .stat-card.prot.below-target .value { color: var(--danger); }
-    .stat-card.prot.below-target { border: 1px solid rgba(248, 113, 113, 0.35); }
-    .stat-card.balance.positive .value { color: var(--success); }
-    .stat-card.balance.negative .value { color: var(--danger); }
-    .stat-card.loss .value { color: var(--accent); }
-
-    .btn-pencil {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 0.85rem;
-      cursor: pointer;
-      padding: 0.15rem 0.3rem;
-      line-height: 1;
-    }
-
-    .btn-pencil:active { color: var(--accent); }
 
     .section {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 1rem;
-      margin-bottom: 1rem;
+      padding: 0.75rem;
+      margin-bottom: 0.65rem;
       box-shadow: var(--shadow);
     }
 
+    .section.priority { border: 1px solid rgba(56, 189, 248, 0.2); }
+
     .section-title {
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.85rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.6rem;
     }
 
-    .field { margin-bottom: 0.85rem; }
+    .section.collapsed .section-body { display: none; }
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .section-toggle .chevron { color: var(--muted); font-size: 0.8rem; transition: transform 0.2s; }
+    .section.collapsed .chevron { transform: rotate(-90deg); }
+
+    .inline-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .mini-stat {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.4rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .mini-stat .lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+    .mini-stat .val { font-size: 1rem; font-weight: 700; margin-top: 0.1rem; }
+    .mini-stat .sub { font-size: 0.58rem; color: var(--muted); }
+    .mini-stat.cal .val { color: var(--warning); }
+    .mini-stat.prot .val { color: var(--protein); }
+    .mini-stat.prot.bad .val { color: var(--danger); }
+    .mini-stat.prot.bad { border: 1px solid rgba(248,113,113,0.35); }
+    .mini-stat.bal.neg .val { color: var(--danger); }
+    .mini-stat.bal.pos .val { color: var(--success); }
+
+    .meal-add-row {
+      display: flex;
+      gap: 0.35rem;
+      align-items: stretch;
+      margin-bottom: 0.4rem;
+    }
+
+    .meal-add-row input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--surface-2);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.55rem 0.6rem;
+      font-size: 16px;
+    }
+
+    .meal-add-row input[type="time"] {
+      width: 72px;
+      background: var(--bg);
+      border: 1px solid var(--surface-2);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.45rem 0.2rem;
+      font-size: 16px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .btn {
+      background: var(--accent-dim);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn:active { opacity: 0.8; }
+    .btn:disabled { opacity: 0.4; }
+    .btn-ghost { background: var(--surface-2); color: var(--text); }
+    .btn-danger { background: transparent; color: var(--danger); font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+
+    .template-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--surface-2);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+
+    .chip:active { border-color: var(--accent); }
+
+    .meal-list { list-style: none; }
+
+    .meal-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--surface-2);
+    }
+
+    .meal-item:last-child { border-bottom: none; }
+    .meal-info .meal-nums { font-weight: 600; font-size: 0.88rem; }
+    .meal-info .meal-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.05rem; }
+    .meal-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      border-radius: 8px;
+    }
+
+    .empty-meals { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 0.5rem 0; }
+    .hint { font-size: 0.68rem; color: var(--muted); margin-top: 0.25rem; }
+
+    .field { margin-bottom: 0.65rem; }
     .field:last-child { margin-bottom: 0; }
-
-    .field label {
-      display: block;
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
+    .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; }
 
     .field input,
     .field textarea {
       width: 100%;
       background: var(--bg);
       border: 1px solid var(--surface-2);
-      border-radius: 10px;
+      border-radius: 8px;
       color: var(--text);
-      padding: 0.65rem 0.75rem;
-      font-size: 1rem;
-      outline: none;
+      padding: 0.55rem 0.65rem;
+      font-size: 16px;
     }
 
-    .field input:focus,
-    .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 52px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
 
-    .field textarea { resize: vertical; min-height: 60px; }
-
-    .field-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
+    .weight-chart {
+      width: 100%;
+      height: 80px;
+      margin-top: 0.5rem;
+      border-radius: 8px;
+      background: var(--bg);
     }
-
-    .meal-add { display: flex; gap: 0.5rem; }
-    .meal-add input { flex: 1; }
-
-    .btn {
-      background: var(--accent-dim);
-      color: #0f172a;
-      border: none;
-      border-radius: 10px;
-      padding: 0.65rem 1rem;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .btn:active { opacity: 0.8; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-ghost { background: var(--surface-2); color: var(--text); }
-    .btn-danger { background: transparent; color: var(--danger); padding: 0.4rem 0.6rem; font-size: 0.8rem; }
-
-    .btn-icon {
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-    }
-
-    .meal-list { list-style: none; margin-top: 0.85rem; }
-
-    .meal-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.7rem 0;
-      border-bottom: 1px solid var(--surface-2);
-    }
-
-    .meal-item:last-child { border-bottom: none; }
-    .meal-info { flex: 1; min-width: 0; }
-    .meal-info .meal-nums { font-weight: 600; font-size: 0.95rem; }
-    .meal-info .meal-nums span { color: var(--muted); font-weight: 400; font-size: 0.82rem; }
-    .meal-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
-
-    .empty-meals {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding: 1rem 0 0.25rem;
-    }
-
-    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
 
     .bmr-note {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: var(--muted);
-      margin-top: 0.5rem;
-      padding: 0.5rem 0.65rem;
+      margin-top: 0.4rem;
+      padding: 0.45rem 0.55rem;
       background: var(--bg);
       border-radius: 8px;
     }
 
     .bmr-note strong { color: var(--accent); }
 
-    .error-toast {
-      position: fixed;
-      bottom: calc(1rem + var(--safe-bottom));
-      left: 50%;
-      transform: translateX(-50%) translateY(120%);
-      background: var(--danger);
-      color: #fff;
-      padding: 0.65rem 1.25rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      z-index: 100;
-      transition: transform 0.3s ease;
-      max-width: calc(100% - 2rem);
-      text-align: center;
+    .data-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
     }
 
-    .error-toast.show { transform: translateX(-50%) translateY(0); }
+    .data-actions .btn,
+    .data-actions .btn-sm { flex: 1; min-width: 0; text-align: center; }
 
     .edit-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0,0,0,0.6);
       z-index: 50;
       align-items: flex-end;
       justify-content: center;
@@ -364,113 +386,165 @@
     .edit-sheet {
       background: var(--surface);
       border-radius: var(--radius);
-      padding: 1.25rem;
+      padding: 1.1rem;
       width: 100%;
       max-width: 480px;
+      max-height: 85dvh;
+      overflow-y: auto;
       box-shadow: var(--shadow);
     }
 
-    .edit-sheet h3 { font-size: 1rem; margin-bottom: 0.35rem; }
-    .edit-sheet .sheet-desc { font-size: 0.82rem; color: var(--muted); margin-bottom: 1rem; }
-    .edit-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .edit-sheet h3 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .edit-sheet .sheet-desc { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.85rem; }
+    .edit-actions { display: flex; gap: 0.4rem; margin-top: 0.85rem; }
     .edit-actions .btn { flex: 1; }
 
-    @media (min-width: 480px) {
-      .app { padding: 1.5rem; }
-      header h1 { font-size: 1.5rem; }
+    .toast {
+      position: fixed;
+      bottom: calc(1rem + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(120%);
+      padding: 0.6rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      z-index: 100;
+      transition: transform 0.3s ease;
+      max-width: calc(100% - 2rem);
+      text-align: center;
     }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error { background: var(--danger); color: #fff; }
+    .toast.success { background: var(--success); color: #0f172a; }
+
+    input[type="file"] { display: none; }
   </style>
 </head>
 <body>
   <div class="app">
-    <header>
+    <div class="top-bar">
       <h1>Calorie & Protein</h1>
-      <p>ติดตามแคลอรี่และโปรตีนรายวัน</p>
-    </header>
+      <div class="top-actions">
+        <button type="button" class="btn-sm" id="btnTheme" aria-label="สลับธีม">☀️</button>
+        <button type="button" class="btn-sm" id="btnSettings" aria-label="ตั้งค่า">⚙️</button>
+      </div>
+    </div>
 
-    <section class="period-summary" aria-label="สรุปช่วงเวลา">
+    <section class="period-summary" aria-label="สรุปย้อนหลัง">
       <div class="section-title">สรุปย้อนหลัง</div>
-      <div class="period-grid" id="periodGrid"></div>
+      <div class="period-scroll" id="periodScroll"></div>
     </section>
 
     <nav class="date-nav" aria-label="เลือกวันที่">
       <button type="button" id="btnPrevDay" aria-label="วันก่อนหน้า">‹</button>
       <div class="date-display">
         <div class="label" id="dateLabel">วันนี้</div>
-        <input type="date" id="datePicker" aria-label="เลือกวันที่">
+        <input type="date" id="datePicker">
       </div>
       <button type="button" id="btnNextDay" aria-label="วันถัดไป">›</button>
     </nav>
 
-    <section class="dashboard" aria-label="สรุปรายวัน">
-      <div class="stat-card cal">
-        <div class="label">Total Cal</div>
-        <div class="value" id="totalCal">0</div>
-        <div class="unit">kcal</div>
-        <div class="sub" id="calSub">เป้าหมาย: ขาดแคล (ลดน้ำหนัก)</div>
+    <div class="inline-stats" aria-label="สรุปวันนี้">
+      <div class="mini-stat cal">
+        <div class="lbl">Cal</div>
+        <div class="val" id="totalCal">0</div>
+        <div class="sub" id="calSub">kcal</div>
       </div>
-      <div class="stat-card prot" id="protCard">
-        <div class="label-row">
-          <div class="label">Protein</div>
-          <button type="button" class="btn-pencil" id="btnEditProtein" aria-label="ตั้งเป้าโปรตีน">✎</button>
+      <div class="mini-stat prot" id="protCard">
+        <div class="lbl">Protein <button type="button" class="btn-sm" id="btnEditProtein" style="padding:0 0.2rem;border:none;background:none;font-size:0.6rem">✎</button></div>
+        <div class="val" id="totalProt">0</div>
+        <div class="sub" id="protSub">/ — g</div>
+      </div>
+      <div class="mini-stat bal" id="balanceCard">
+        <div class="lbl">Balance</div>
+        <div class="val" id="balance">0</div>
+        <div class="sub">kcal</div>
+      </div>
+    </div>
+
+    <section class="section priority" aria-label="เพิ่มมื้ออาหาร">
+      <div class="section-title">เพิ่มมื้อ (<span id="mealCount">0</span>/7)</div>
+      <div class="template-chips" id="templateChips"></div>
+      <div class="meal-add-row">
+        <input type="text" id="mealInput" placeholder="Cal,Protein" autocomplete="off">
+        <input type="time" id="mealTime" aria-label="เวลา">
+        <button type="button" class="btn" id="btnAddMeal">+</button>
+      </div>
+      <p class="hint">เช่น 450,30 · เวลาเริ่มต้น = ตอนนี้</p>
+      <ul class="meal-list" id="mealList"></ul>
+      <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ — เพิ่มด้านบน</p>
+    </section>
+
+    <section class="section" aria-label="ข้อมูลผู้ใช้">
+      <div class="section-title">ข้อมูลผู้ใช้</div>
+      <div class="field-row-3">
+        <div class="field">
+          <label for="profileWeight">น้ำหนัก (kg)</label>
+          <input type="number" id="profileWeight" inputmode="decimal" step="0.1" min="0" placeholder="70">
         </div>
-        <div class="value" id="totalProt">0</div>
-        <div class="unit">g</div>
-        <div class="sub" id="protSub">เป้า — g</div>
+        <div class="field">
+          <label for="profileAge">อายุ</label>
+          <input type="number" id="profileAge" inputmode="numeric" step="1" min="1" max="120" placeholder="30">
+        </div>
+        <div class="field">
+          <label for="profileWaist">รอบเอว (cm)</label>
+          <input type="number" id="profileWaist" inputmode="decimal" step="0.1" min="0" placeholder="80">
+        </div>
       </div>
-      <div class="stat-card balance" id="balanceCard">
-        <div class="label">Balance (Deficit)</div>
-        <div class="value" id="balance">0</div>
-        <div class="unit">kcal</div>
+      <canvas class="weight-chart" id="weightChart" aria-label="กราฟน้ำหนัก 30 วัน"></canvas>
+    </section>
+
+    <section class="section collapsed" id="dailySection" aria-label="ข้อมูลรายวัน">
+      <div class="section-toggle" id="toggleDaily">
+        <div class="section-title" style="margin:0">รายละเอียดวันนี้</div>
+        <span class="chevron">▼</span>
       </div>
-      <div class="stat-card loss">
-        <div class="label">Weight Loss Est.</div>
-        <div class="value" id="weightLoss">0</div>
-        <div class="unit">kg (bl-kg)</div>
-      </div>
-      <div class="stat-card full">
-        <div class="label">Bsum (TDEE)</div>
-        <div class="value" id="bsum">0 <span class="unit">kcal</span></div>
+      <div class="section-body" style="margin-top:0.65rem">
+        <div class="field-row">
+          <div class="field">
+            <label for="exerciseBurn">Exercise Burn (kcal)</label>
+            <input type="number" id="exerciseBurn" inputmode="numeric" step="1" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="weightLoss">Est. Loss (kg)</label>
+            <input type="text" id="weightLoss" readonly style="opacity:0.7">
+          </div>
+        </div>
+        <div class="field">
+          <label for="workoutProgram">Workout Program</label>
+          <textarea id="workoutProgram" placeholder='เช่น "อก 3, หลังแขน 1"' rows="2"></textarea>
+        </div>
         <div class="bmr-note" id="bsumNote"></div>
       </div>
     </section>
 
-    <section class="section" aria-label="ข้อมูลรายวัน">
-      <div class="section-title">ข้อมูลรายวัน</div>
-      <div class="field-row">
-        <div class="field">
-          <label for="weight">น้ำหนักปัจจุบัน (kg)</label>
-          <input type="number" id="weight" inputmode="decimal" step="0.1" min="0" placeholder="70">
+    <section class="section collapsed" id="dataSection" aria-label="ข้อมูลและสำรอง">
+      <div class="section-toggle" id="toggleData">
+        <div class="section-title" style="margin:0">สำรองข้อมูล</div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body" style="margin-top:0.65rem">
+        <p class="hint" style="margin-bottom:0.5rem">Export ก่อนอัปเดตเว็บ — ข้อมูลไม่หายถ้าใช้ URL เดิม</p>
+        <div class="data-actions">
+          <button type="button" class="btn btn-ghost" id="btnExport">Export JSON</button>
+          <button type="button" class="btn btn-ghost" id="btnImport">Import JSON</button>
+          <input type="file" id="importFile" accept=".json,application/json">
         </div>
-        <div class="field">
-          <label for="exerciseBurn">Exercise Burn (kcal)</label>
-          <input type="number" id="exerciseBurn" inputmode="numeric" step="1" min="0" placeholder="0">
-        </div>
       </div>
-      <div class="field">
-        <label for="workoutProgram">Workout Program</label>
-        <textarea id="workoutProgram" placeholder='เช่น "อก 3, หลังแขน 1"' rows="2"></textarea>
-      </div>
-    </section>
-
-    <section class="section" aria-label="มื้ออาหาร">
-      <div class="section-title">มื้ออาหาร (<span id="mealCount">0</span>/7)</div>
-      <div class="meal-add">
-        <input type="text" id="mealInput" placeholder="Cal,Protein เช่น 450,30" inputmode="text" autocomplete="off">
-        <button type="button" class="btn" id="btnAddMeal">เพิ่ม</button>
-      </div>
-      <p class="hint">รูปแบบ: แคลอรี่,โปรตีน (เช่น 450,30)</p>
-      <ul class="meal-list" id="mealList"></ul>
-      <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้ออาหาร — เพิ่มมื้อแรกได้เลย</p>
     </section>
   </div>
 
-  <div class="edit-overlay" id="editOverlay" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="edit-overlay" id="editOverlay" role="dialog" aria-modal="true">
     <div class="edit-sheet">
-      <h3 id="editTitle">แก้ไขมื้ออาหาร</h3>
+      <h3>แก้ไขมื้ออาหาร</h3>
       <div class="field">
         <label for="editMealInput">Cal,Protein</label>
         <input type="text" id="editMealInput" placeholder="450,30">
+      </div>
+      <div class="field">
+        <label for="editMealTime">เวลา</label>
+        <input type="time" id="editMealTime">
       </div>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelEdit">ยกเลิก</button>
@@ -479,22 +553,24 @@
     </div>
   </div>
 
-  <div class="edit-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="edit-overlay" id="settingsOverlay" role="dialog" aria-modal="true">
     <div class="edit-sheet">
-      <h3 id="settingsTitle">ตั้งเป้าโปรตีน</h3>
-      <p class="sheet-desc">เป้าหมาย = น้ำหนัก (kg) × ตัวคูณ<br>โปรตีนเป็นค่าบังคับ — ไม่ถึงเป้าจะแสดงสีแดง</p>
+      <h3>ตั้งค่า</h3>
       <div class="field">
-        <label for="proteinMultiplier">ตัวคูณโปรตีน (เช่น 1.55)</label>
-        <input type="number" id="proteinMultiplier" inputmode="decimal" step="0.01" min="0.5" max="3" placeholder="1.55">
+        <label for="proteinMultiplier">ตัวคูณโปรตีน (× น้ำหนัก kg)</label>
+        <input type="number" id="proteinMultiplier" inputmode="decimal" step="0.01" min="0.5" max="3">
       </div>
+      <p class="sheet-desc">เทมเพลตมื้อ — กดเพิ่มด้านล่าง</p>
+      <div id="templateEditor"></div>
+      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.5rem">+ เทมเพลตใหม่</button>
       <div class="edit-actions">
-        <button type="button" class="btn btn-ghost" id="btnCancelSettings">ยกเลิก</button>
+        <button type="button" class="btn btn-ghost" id="btnCancelSettings">ปิด</button>
         <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
       </div>
     </div>
   </div>
 
-  <div class="error-toast" id="errorToast" role="alert"></div>
+  <div class="toast error" id="toast" role="alert"></div>
 
   <script>
     const STORAGE_PREFIX = 'calorieTracker:';
@@ -503,7 +579,22 @@
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
-    const PERIOD_DAYS = [3, 7, 30];
+
+    const PERIODS = [
+      { days: 3, label: '3วัน' },
+      { days: 7, label: '7วัน' },
+      { days: 15, label: '15วัน' },
+      { days: 30, label: '30วัน' },
+      { days: 90, label: '3ด.' },
+      { days: 180, label: '6ด.' },
+      { days: 365, label: '12ด.' },
+    ];
+
+    const DEFAULT_TEMPLATES = [
+      { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
+      { id: 't2', label: 'โปรตีนเชค', calories: 120, protein: 24 },
+      { id: 't3', label: 'ข้าว+ไก่', calories: 450, protein: 35 },
+    ];
 
     let currentDate = todayStr();
     let editingMealId = null;
@@ -511,7 +602,7 @@
     const $ = (sel) => document.querySelector(sel);
 
     const els = {
-      periodGrid: $('#periodGrid'),
+      periodScroll: $('#periodScroll'),
       datePicker: $('#datePicker'),
       dateLabel: $('#dateLabel'),
       btnPrevDay: $('#btnPrevDay'),
@@ -524,30 +615,47 @@
       balance: $('#balance'),
       balanceCard: $('#balanceCard'),
       weightLoss: $('#weightLoss'),
-      bsum: $('#bsum'),
       bsumNote: $('#bsumNote'),
-      weight: $('#weight'),
+      profileWeight: $('#profileWeight'),
+      profileAge: $('#profileAge'),
+      profileWaist: $('#profileWaist'),
       exerciseBurn: $('#exerciseBurn'),
       workoutProgram: $('#workoutProgram'),
       mealInput: $('#mealInput'),
+      mealTime: $('#mealTime'),
       btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'),
       mealCount: $('#mealCount'),
       emptyMeals: $('#emptyMeals'),
+      templateChips: $('#templateChips'),
+      weightChart: $('#weightChart'),
       editOverlay: $('#editOverlay'),
       editMealInput: $('#editMealInput'),
+      editMealTime: $('#editMealTime'),
       btnCancelEdit: $('#btnCancelEdit'),
       btnSaveEdit: $('#btnSaveEdit'),
       settingsOverlay: $('#settingsOverlay'),
       proteinMultiplier: $('#proteinMultiplier'),
+      templateEditor: $('#templateEditor'),
+      btnAddTemplate: $('#btnAddTemplate'),
       btnEditProtein: $('#btnEditProtein'),
+      btnSettings: $('#btnSettings'),
+      btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'),
       btnSaveSettings: $('#btnSaveSettings'),
-      errorToast: $('#errorToast'),
+      btnExport: $('#btnExport'),
+      btnImport: $('#btnImport'),
+      importFile: $('#importFile'),
+      toast: $('#toast'),
     };
 
     function todayStr() {
       return new Date().toISOString().slice(0, 10);
+    }
+
+    function nowTimeStr() {
+      const n = new Date();
+      return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
     }
 
     function shiftDate(dateStr, days) {
@@ -558,31 +666,68 @@
 
     function formatDateLabel(dateStr) {
       if (dateStr === todayStr()) return 'วันนี้';
-      const d = new Date(dateStr + 'T12:00:00');
-      return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      return new Date(dateStr + 'T12:00:00').toLocaleDateString('th-TH', {
+        weekday: 'short', day: 'numeric', month: 'short',
+      });
+    }
+
+    function formatTimeDisplay(time) {
+      if (!time) return '';
+      const [h, m] = time.split(':');
+      return parseInt(h, 10) + ':' + m;
     }
 
     function storageKey(dateStr) {
       return STORAGE_PREFIX + dateStr;
     }
 
+    function defaultSettings() {
+      return {
+        proteinMultiplier: DEFAULT_PROTEIN_MULT,
+        theme: 'dark',
+        templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+        profile: { weight: '', age: '', waist: '' },
+      };
+    }
+
     function loadSettings() {
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return { proteinMultiplier: DEFAULT_PROTEIN_MULT };
+        if (!raw) return defaultSettings();
         const s = JSON.parse(raw);
-        return { proteinMultiplier: parseFloat(s.proteinMultiplier) || DEFAULT_PROTEIN_MULT };
+        return {
+          proteinMultiplier: parseFloat(s.proteinMultiplier) || DEFAULT_PROTEIN_MULT,
+          theme: s.theme === 'light' ? 'light' : 'dark',
+          templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+          profile: {
+            weight: s.profile?.weight ?? '',
+            age: s.profile?.age ?? '',
+            waist: s.profile?.waist ?? '',
+          },
+        };
       } catch {
-        return { proteinMultiplier: DEFAULT_PROTEIN_MULT };
+        return defaultSettings();
       }
     }
 
-    function saveSettings(settings) {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    function saveSettings(partial) {
+      const cur = loadSettings();
+      const next = { ...cur, ...partial };
+      if (partial.profile) next.profile = { ...cur.profile, ...partial.profile };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
     }
 
     function defaultDayData() {
-      return { weight: '', exerciseBurn: '', workoutProgram: '', meals: [] };
+      return { exerciseBurn: '', workoutProgram: '', meals: [] };
+    }
+
+    function migrateMeal(meal) {
+      return {
+        id: meal.id || crypto.randomUUID(),
+        calories: meal.calories,
+        protein: meal.protein,
+        time: meal.time || '12:00',
+      };
     }
 
     function loadDay(dateStr) {
@@ -590,11 +735,12 @@
         const raw = localStorage.getItem(storageKey(dateStr));
         if (!raw) return defaultDayData();
         const data = JSON.parse(raw);
+        const meals = Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [];
         return {
-          weight: data.weight ?? '',
           exerciseBurn: data.exerciseBurn ?? '',
           workoutProgram: data.workoutProgram ?? '',
-          meals: Array.isArray(data.meals) ? data.meals : [],
+          meals,
+          _legacyWeight: data.weight ?? '',
         };
       } catch {
         return defaultDayData();
@@ -602,12 +748,49 @@
     }
 
     function saveDay(dateStr, data) {
-      localStorage.setItem(storageKey(dateStr), JSON.stringify(data));
+      const toSave = {
+        exerciseBurn: data.exerciseBurn ?? '',
+        workoutProgram: data.workoutProgram ?? '',
+        meals: data.meals ?? [],
+      };
+      localStorage.setItem(storageKey(dateStr), JSON.stringify(toSave));
+    }
+
+    function getEffectiveWeight(forDate) {
+      const profileW = parseFloat(loadSettings().profile.weight);
+      if (!isNaN(profileW) && profileW > 0) return profileW;
+
+      for (let i = 0; i < 400; i++) {
+        const d = shiftDate(forDate, -i);
+        const day = loadDay(d);
+        const w = parseFloat(day._legacyWeight);
+        if (!isNaN(w) && w > 0) return w;
+      }
+      return 0;
+    }
+
+    function runMigration() {
+      const settings = loadSettings();
+      let profileUpdated = false;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
+        const dateStr = key.slice(STORAGE_PREFIX.length);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+        const day = loadDay(dateStr);
+        if (day._legacyWeight && !settings.profile.weight) {
+          settings.profile.weight = day._legacyWeight;
+          profileUpdated = true;
+        }
+        saveDay(dateStr, day);
+      }
+
+      if (profileUpdated) saveSettings({ profile: settings.profile });
     }
 
     function getFormData() {
       return {
-        weight: els.weight.value,
         exerciseBurn: els.exerciseBurn.value,
         workoutProgram: els.workoutProgram.value,
         meals: loadDay(currentDate).meals,
@@ -616,6 +799,16 @@
 
     function persistForm() {
       saveDay(currentDate, getFormData());
+    }
+
+    function persistProfile() {
+      saveSettings({
+        profile: {
+          weight: els.profileWeight.value,
+          age: els.profileAge.value,
+          waist: els.profileWaist.value,
+        },
+      });
     }
 
     function parseMealInput(text) {
@@ -641,15 +834,15 @@
       return Math.round(w * loadSettings().proteinMultiplier * 10) / 10;
     }
 
-    function calculate(data) {
+    function calculate(data, weight) {
       const totalCal = data.meals.reduce((s, m) => s + m.calories, 0);
       const totalProt = data.meals.reduce((s, m) => s + m.protein, 0);
-      const baseBMR = calcBMR(data.weight);
+      const baseBMR = calcBMR(weight);
       const exercise = parseFloat(data.exerciseBurn) || 0;
       const bsum = baseBMR + exercise;
       const balance = totalCal - bsum;
       const weightLoss = bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0;
-      const proteinTarget = getProteinTarget(data.weight);
+      const proteinTarget = getProteinTarget(weight);
       return { totalCal, totalProt, baseBMR, exercise, bsum, balance, weightLoss, proteinTarget };
     }
 
@@ -659,27 +852,34 @@
       return dates;
     }
 
+    function getWeightOnDate(date) {
+      const day = loadDay(date);
+      const legacy = parseFloat(day._legacyWeight);
+      if (!isNaN(legacy) && legacy > 0) return legacy;
+      return getEffectiveWeight(date);
+    }
+
     function formatWeightChange(delta) {
       if (delta === null) return { text: '—', cls: 'neutral' };
-      const rounded = Math.round(delta * 10) / 10;
-      if (rounded < 0) return { text: 'ลง ' + Math.abs(rounded) + ' kg', cls: 'good' };
-      if (rounded > 0) return { text: 'ขึ้น ' + rounded + ' kg', cls: 'bad' };
-      return { text: 'คงที่', cls: 'neutral' };
+      const r = Math.round(delta * 10) / 10;
+      if (r < 0) return { text: '↓' + Math.abs(r), cls: 'good' };
+      if (r > 0) return { text: '↑' + r, cls: 'bad' };
+      return { text: '—', cls: 'neutral' };
     }
 
     function formatBalance(total) {
       if (total === 0) return { text: '—', cls: 'neutral' };
-      const rounded = Math.round(total);
-      if (rounded < 0) return { text: 'ขาด ' + Math.abs(rounded).toLocaleString() + ' kcal', cls: 'good' };
-      if (rounded > 0) return { text: 'เกิน ' + rounded.toLocaleString() + ' kcal', cls: 'bad' };
-      return { text: '0 kcal', cls: 'neutral' };
+      const r = Math.round(total);
+      if (r < 0) return { text: '↓' + Math.abs(r), cls: 'good' };
+      if (r > 0) return { text: '↑' + r, cls: 'bad' };
+      return { text: '0', cls: 'neutral' };
     }
 
     function formatProteinShortfall(totalShortfall, daysWithMeals) {
       if (daysWithMeals === 0) return { text: '—', cls: 'neutral' };
-      const rounded = Math.round(totalShortfall);
-      if (rounded > 0) return { text: 'ขาดรวม ' + rounded + 'g', cls: 'bad' };
-      return { text: 'ถึงเป้าทุกวัน', cls: 'good' };
+      const r = Math.round(totalShortfall);
+      if (r > 0) return { text: '↓' + r + 'g', cls: 'bad' };
+      return { text: '✓', cls: 'good' };
     }
 
     function calcPeriodSummary(endDate, periodDays) {
@@ -690,40 +890,31 @@
       let totalBalance = 0;
       let totalProteinShortfall = 0;
       let daysWithMeals = 0;
-      let hasAnyData = false;
 
       dates.forEach((date) => {
         const data = loadDay(date);
-        const stats = calculate(data);
-        const w = parseFloat(data.weight);
+        const w = getWeightOnDate(date);
+        const stats = calculate(data, w);
 
-        if (!isNaN(w) && w > 0) {
+        if (w > 0) {
           if (startWeight === null) startWeight = w;
           endWeight = w;
-          hasAnyData = true;
         }
 
         if (data.meals.length > 0) {
-          hasAnyData = true;
           daysWithMeals++;
           totalBalance += stats.balance;
           const target = w > 0 ? w * mult : (endWeight || 0) * mult;
           if (target > 0 && stats.totalProt < target) {
             totalProteinShortfall += target - stats.totalProt;
           }
-        } else if (data.weight || data.exerciseBurn) {
-          hasAnyData = true;
+        } else if (data.exerciseBurn) {
           totalBalance += stats.balance;
         }
       });
 
-      const weightChange = startWeight !== null && endWeight !== null
-        ? endWeight - startWeight
-        : null;
-
       return {
-        hasAnyData,
-        weightChange,
+        weightChange: startWeight !== null && endWeight !== null ? endWeight - startWeight : null,
         totalBalance,
         totalProteinShortfall,
         daysWithMeals,
@@ -732,9 +923,9 @@
 
     function renderPeriodSummary() {
       const endDate = currentDate <= todayStr() ? currentDate : todayStr();
-      els.periodGrid.innerHTML = '';
+      els.periodScroll.innerHTML = '';
 
-      PERIOD_DAYS.forEach((days) => {
+      PERIODS.forEach(({ days, label }) => {
         const s = calcPeriodSummary(endDate, days);
         const w = formatWeightChange(s.weightChange);
         const c = formatBalance(s.totalBalance);
@@ -743,11 +934,11 @@
         const card = document.createElement('div');
         card.className = 'period-card';
         card.innerHTML =
-          '<div class="period-label">' + days + ' วัน</div>'
-          + '<div class="period-stat">น้ำหนัก<span class="val ' + w.cls + '">' + w.text + '</span></div>'
-          + '<div class="period-stat">แคลอรี่<span class="val ' + c.cls + '">' + c.text + '</span></div>'
-          + '<div class="period-stat">โปรตีน<span class="val ' + p.cls + '">' + p.text + '</span></div>';
-        els.periodGrid.appendChild(card);
+          '<div class="period-label">' + label + '</div>'
+          + '<div class="period-stat">กก.<span class="val ' + w.cls + '">' + w.text + '</span></div>'
+          + '<div class="period-stat">แคล<span class="val ' + c.cls + '">' + c.text + '</span></div>'
+          + '<div class="period-stat">prot<span class="val ' + p.cls + '">' + p.text + '</span></div>';
+        els.periodScroll.appendChild(card);
       });
     }
 
@@ -758,44 +949,39 @@
       els.totalProt.textContent = protRounded;
 
       const target = stats.proteinTarget;
-      const mult = loadSettings().proteinMultiplier;
       if (target > 0) {
-        els.protSub.textContent = 'เป้า ' + target + 'g (' + mult + '× น้ำหนัก)';
+        els.protSub.textContent = '/ ' + target + 'g';
         const below = protRounded < target;
-        els.protCard.classList.toggle('below-target', below);
-        if (below) {
-          els.protSub.textContent = 'ขาด ' + Math.round((target - protRounded) * 10) / 10 + 'g · เป้า ' + target + 'g';
-        }
+        els.protCard.classList.toggle('bad', below);
       } else {
-        els.protSub.textContent = 'กรอกน้ำหนักเพื่อคำนวณเป้า';
-        els.protCard.classList.remove('below-target');
+        els.protSub.textContent = '/ — g';
+        els.protCard.classList.remove('bad');
       }
 
       const balRounded = Math.round(stats.balance);
       els.balance.textContent = (balRounded > 0 ? '+' : '') + balRounded;
-      els.balanceCard.classList.toggle('positive', stats.balance > 0);
-      els.balanceCard.classList.toggle('negative', stats.balance < 0);
+      els.balanceCard.classList.toggle('neg', stats.balance < 0);
+      els.balanceCard.classList.toggle('pos', stats.balance > 0);
 
       if (stats.balance < 0) {
-        els.calSub.textContent = 'ขาดแคล ' + Math.abs(balRounded) + ' kcal ✓';
+        els.calSub.textContent = 'ขาด ' + Math.abs(balRounded);
       } else if (stats.balance > 0) {
-        els.calSub.textContent = 'เกินแคล ' + balRounded + ' kcal';
+        els.calSub.textContent = 'เกิน ' + balRounded;
       } else {
-        els.calSub.textContent = 'เป้าหมาย: ขาดแคล (ลดน้ำหนัก)';
+        els.calSub.textContent = 'kcal';
       }
 
       const wl = stats.weightLoss;
-      els.weightLoss.textContent = (wl >= 0 ? '+' : '') + (Math.round(wl * 1000) / 1000);
+      els.weightLoss.value = (wl >= 0 ? '+' : '') + (Math.round(wl * 1000) / 1000);
 
-      els.bsum.innerHTML = Math.round(stats.bsum) + ' <span class="unit">kcal</span>';
-
-      const w = parseFloat(els.weight.value);
-      if (!isNaN(w) && w > 0) {
+      const w = getEffectiveWeight(currentDate);
+      if (w > 0) {
         els.bsumNote.innerHTML =
-          'Base BMR = <strong>' + Math.round(stats.baseBMR) + '</strong> kcal (' + w + ' kg × ' + BMR_MULTIPLIER + ')'
-          + ' + Exercise <strong>' + Math.round(stats.exercise) + '</strong> kcal';
+          'Bsum <strong>' + Math.round(stats.bsum) + '</strong> kcal = BMR '
+          + Math.round(stats.baseBMR) + ' (' + w + '×' + BMR_MULTIPLIER + ') + ออกกำลัง '
+          + Math.round(stats.exercise);
       } else {
-        els.bsumNote.innerHTML = 'กรอกน้ำหนักเพื่อคำนวณ Base BMR (' + BMR_MULTIPLIER + ' × kg)';
+        els.bsumNote.innerHTML = 'กรอกน้ำหนักในโปรไฟล์เพื่อคำนวณ BMR';
       }
     }
 
@@ -805,29 +991,160 @@
       els.emptyMeals.style.display = meals.length === 0 ? 'block' : 'none';
       els.mealList.innerHTML = '';
 
-      meals.forEach((meal, idx) => {
+      const sorted = [...meals].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+      sorted.forEach((meal, idx) => {
         const li = document.createElement('li');
         li.className = 'meal-item';
         li.innerHTML =
           '<div class="meal-info">'
-          + '<div class="meal-nums">' + Math.round(meal.calories) + ' kcal <span>· ' + meal.protein + 'g protein</span></div>'
+          + '<div class="meal-nums">' + Math.round(meal.calories) + ' kcal · ' + meal.protein + 'g</div>'
+          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(meal.time) + '</div>'
           + '</div>'
           + '<div class="meal-actions">'
-          + '<button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + meal.id + '" aria-label="แก้ไขมื้อ ' + (idx + 1) + '">✎</button>'
-          + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + meal.id + '" aria-label="ลบมื้อ ' + (idx + 1) + '">✕</button>'
+          + '<button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + meal.id + '">✎</button>'
+          + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + meal.id + '">✕</button>'
           + '</div>';
         els.mealList.appendChild(li);
       });
     }
 
+    function renderTemplates() {
+      const templates = loadSettings().templates;
+      els.templateChips.innerHTML = '';
+      templates.forEach((t) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.textContent = t.label;
+        btn.addEventListener('click', () => {
+          els.mealInput.value = t.calories + ',' + t.protein;
+          els.mealInput.focus();
+        });
+        els.templateChips.appendChild(btn);
+      });
+    }
+
+    function renderTemplateEditor() {
+      const templates = loadSettings().templates;
+      els.templateEditor.innerHTML = '';
+      templates.forEach((t, i) => {
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.style.marginBottom = '0.5rem';
+        row.innerHTML =
+          '<input type="text" data-tpl="label" data-i="' + i + '" value="' + escapeAttr(t.label) + '" placeholder="ชื่อ" style="font-size:14px;padding:0.4rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input type="text" data-tpl="val" data-i="' + i + '" value="' + t.calories + ',' + t.protein + '" placeholder="Cal,Prot" style="font-size:14px;padding:0.4rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
+        els.templateEditor.appendChild(row);
+      });
+    }
+
+    function escapeAttr(s) {
+      return String(s).replace(/"/g, '&quot;');
+    }
+
+    function readTemplateEditor() {
+      const templates = [];
+      const labels = els.templateEditor.querySelectorAll('[data-tpl="label"]');
+      labels.forEach((el) => {
+        const i = parseInt(el.dataset.i, 10);
+        const valEl = els.templateEditor.querySelector('[data-tpl="val"][data-i="' + i + '"]');
+        const parsed = parseMealInput(valEl?.value || '');
+        if (parsed && el.value.trim()) {
+          templates.push({
+            id: 't' + Date.now() + i,
+            label: el.value.trim(),
+            calories: parsed.calories,
+            protein: parsed.protein,
+          });
+        }
+      });
+      return templates;
+    }
+
+    function renderWeightChart() {
+      const canvas = els.weightChart;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      const endDate = currentDate <= todayStr() ? currentDate : todayStr();
+      const dates = getDateRange(endDate, 30);
+      const points = [];
+
+      dates.forEach((date) => {
+        const wt = getWeightOnDate(date);
+        if (wt > 0) points.push({ date, wt });
+      });
+
+      if (points.length < 2) {
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('กราฟน้ำหนัก (ต้องมี 2 จุดขึ้นไป)', w / 2, h / 2);
+        return;
+      }
+
+      const weights = points.map((p) => p.wt);
+      const minW = Math.min(...weights) - 0.5;
+      const maxW = Math.max(...weights) + 0.5;
+      const range = maxW - minW || 1;
+      const pad = 8;
+
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      points.forEach((p, i) => {
+        const x = pad + (i / (points.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((p.wt - minW) / range) * (h - pad * 2);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      points.forEach((p, i) => {
+        const x = pad + (i / (points.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((p.wt - minW) / range) * (h - pad * 2);
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(minW.toFixed(1) + ' kg', 4, h - 2);
+      ctx.textAlign = 'right';
+      ctx.fillText(maxW.toFixed(1) + ' kg', w - 4, 12);
+    }
+
+    function hapticSuccess() {
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
+
     function refresh() {
+      const profile = loadSettings().profile;
+      els.profileWeight.value = profile.weight;
+      els.profileAge.value = profile.age;
+      els.profileWaist.value = profile.waist;
+
       const data = loadDay(currentDate);
-      els.weight.value = data.weight;
       els.exerciseBurn.value = data.exerciseBurn;
       els.workoutProgram.value = data.workoutProgram;
+
+      const weight = getEffectiveWeight(currentDate);
       renderMeals(data.meals);
-      renderDashboard(calculate(data));
+      renderDashboard(calculate(data, weight));
       renderPeriodSummary();
+      renderTemplates();
+      renderWeightChart();
     }
 
     function setDate(dateStr) {
@@ -835,24 +1152,43 @@
       els.datePicker.value = dateStr;
       els.dateLabel.textContent = formatDateLabel(dateStr);
       els.btnNextDay.disabled = dateStr >= todayStr();
+      els.mealTime.value = nowTimeStr();
       refresh();
     }
 
-    function addMeal() {
-      const parsed = parseMealInput(els.mealInput.value);
-      if (!parsed) {
-        showError('รูปแบบไม่ถูกต้อง — ใช้ Cal,Protein เช่น 450,30');
-        return;
-      }
+    function addMeal(calories, protein, time) {
       const data = loadDay(currentDate);
       if (data.meals.length >= MAX_MEALS) {
-        showError('เพิ่มได้สูงสุด ' + MAX_MEALS + ' มื้อต่อวัน');
+        showToast('เพิ่มได้สูงสุด ' + MAX_MEALS + ' มื้อ', 'error');
         return;
       }
-      data.meals.push({ id: crypto.randomUUID(), calories: parsed.calories, protein: parsed.protein });
+      data.meals.push({
+        id: crypto.randomUUID(),
+        calories,
+        protein,
+        time: time || nowTimeStr(),
+      });
       saveDay(currentDate, { ...getFormData(), meals: data.meals });
+
+      const weight = getEffectiveWeight(currentDate);
+      const stats = calculate({ ...data, meals: data.meals }, weight);
+      if (stats.proteinTarget > 0 && stats.totalProt >= stats.proteinTarget) {
+        hapticSuccess();
+        showToast('ถึงเป้าโปรตีนแล้ว! 🎉', 'success');
+      }
+
       els.mealInput.value = '';
+      els.mealTime.value = nowTimeStr();
       refresh();
+    }
+
+    function handleAddMeal() {
+      const parsed = parseMealInput(els.mealInput.value);
+      if (!parsed) {
+        showToast('ใช้รูปแบบ Cal,Protein เช่น 450,30', 'error');
+        return;
+      }
+      addMeal(parsed.calories, parsed.protein, els.mealTime.value);
     }
 
     function deleteMeal(id) {
@@ -867,8 +1203,8 @@
       if (!meal) return;
       editingMealId = id;
       els.editMealInput.value = meal.calories + ',' + meal.protein;
+      els.editMealTime.value = meal.time || '12:00';
       els.editOverlay.classList.add('open');
-      els.editMealInput.focus();
     }
 
     function closeEdit() {
@@ -879,7 +1215,7 @@
     function saveEdit() {
       const parsed = parseMealInput(els.editMealInput.value);
       if (!parsed) {
-        showError('รูปแบบไม่ถูกต้อง — ใช้ Cal,Protein เช่น 450,30');
+        showToast('ใช้รูปแบบ Cal,Protein', 'error');
         return;
       }
       const data = loadDay(currentDate);
@@ -887,6 +1223,7 @@
       if (!meal) { closeEdit(); return; }
       meal.calories = parsed.calories;
       meal.protein = parsed.protein;
+      meal.time = els.editMealTime.value || '12:00';
       saveDay(currentDate, { ...getFormData(), meals: data.meals });
       closeEdit();
       refresh();
@@ -894,31 +1231,84 @@
 
     function openSettings() {
       els.proteinMultiplier.value = loadSettings().proteinMultiplier;
+      renderTemplateEditor();
       els.settingsOverlay.classList.add('open');
-      els.proteinMultiplier.focus();
     }
 
     function closeSettings() {
       els.settingsOverlay.classList.remove('open');
     }
 
-    function saveProteinSettings() {
+    function saveAllSettings() {
       const mult = parseFloat(els.proteinMultiplier.value);
       if (isNaN(mult) || mult < 0.5 || mult > 3) {
-        showError('ตัวคูณต้องอยู่ระหว่าง 0.5 – 3.0');
+        showToast('ตัวคูณ 0.5 – 3.0', 'error');
         return;
       }
-      saveSettings({ proteinMultiplier: mult });
+      const templates = readTemplateEditor();
+      saveSettings({ proteinMultiplier: mult, templates: templates.length ? templates : loadSettings().templates });
       closeSettings();
       refresh();
     }
 
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      saveSettings({ theme });
+      els.btnTheme.textContent = theme === 'dark' ? '☀️' : '🌙';
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0f172a' : '#f1f5f9';
+    }
+
+    function exportData() {
+      const payload = { version: 2, exportedAt: new Date().toISOString(), data: {} };
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX)) {
+          payload.data[key] = localStorage.getItem(key);
+        }
+      }
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'calorie-tracker-backup-' + todayStr() + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('Export สำเร็จ', 'success');
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const payload = JSON.parse(reader.result);
+          const data = payload.data || payload;
+          if (typeof data !== 'object') throw new Error('invalid');
+          let count = 0;
+          Object.keys(data).forEach((key) => {
+            if (key.startsWith(STORAGE_PREFIX)) {
+              localStorage.setItem(key, typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]));
+              count++;
+            }
+          });
+          runMigration();
+          refresh();
+          showToast('Import ' + count + ' รายการสำเร็จ', 'success');
+        } catch {
+          showToast('ไฟล์ไม่ถูกต้อง', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+
     let toastTimer = null;
-    function showError(msg) {
-      els.errorToast.textContent = msg;
-      els.errorToast.classList.add('show');
+    function showToast(msg, type) {
+      els.toast.textContent = msg;
+      els.toast.className = 'toast show ' + (type || 'error');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => els.errorToast.classList.remove('show'), 2800);
+      toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2800);
+    }
+
+    function toggleSection(id) {
+      document.getElementById(id).classList.toggle('collapsed');
     }
 
     els.btnPrevDay.addEventListener('click', () => setDate(shiftDate(currentDate, -1)));
@@ -933,17 +1323,28 @@
       else els.datePicker.value = currentDate;
     });
 
-    ['weight', 'exerciseBurn', 'workoutProgram'].forEach((id) => {
+    ['exerciseBurn', 'workoutProgram'].forEach((id) => {
       document.getElementById(id).addEventListener('input', () => {
         persistForm();
-        renderDashboard(calculate(getFormData()));
+        const weight = getEffectiveWeight(currentDate);
+        renderDashboard(calculate(getFormData(), weight));
         renderPeriodSummary();
       });
     });
 
-    els.btnAddMeal.addEventListener('click', addMeal);
+    ['profileWeight', 'profileAge', 'profileWaist'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', () => {
+        persistProfile();
+        const weight = getEffectiveWeight(currentDate);
+        renderDashboard(calculate(getFormData(), weight));
+        renderPeriodSummary();
+        renderWeightChart();
+      });
+    });
+
+    els.btnAddMeal.addEventListener('click', handleAddMeal);
     els.mealInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); addMeal(); }
+      if (e.key === 'Enter') { e.preventDefault(); handleAddMeal(); }
     });
 
     els.mealList.addEventListener('click', (e) => {
@@ -955,25 +1356,41 @@
 
     els.btnCancelEdit.addEventListener('click', closeEdit);
     els.btnSaveEdit.addEventListener('click', saveEdit);
-    els.editOverlay.addEventListener('click', (e) => {
-      if (e.target === els.editOverlay) closeEdit();
-    });
-    els.editMealInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
-      if (e.key === 'Escape') closeEdit();
-    });
+    els.editOverlay.addEventListener('click', (e) => { if (e.target === els.editOverlay) closeEdit(); });
 
     els.btnEditProtein.addEventListener('click', openSettings);
+    els.btnSettings.addEventListener('click', openSettings);
     els.btnCancelSettings.addEventListener('click', closeSettings);
-    els.btnSaveSettings.addEventListener('click', saveProteinSettings);
-    els.settingsOverlay.addEventListener('click', (e) => {
-      if (e.target === els.settingsOverlay) closeSettings();
-    });
-    els.proteinMultiplier.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); saveProteinSettings(); }
-      if (e.key === 'Escape') closeSettings();
+    els.btnSaveSettings.addEventListener('click', saveAllSettings);
+    els.settingsOverlay.addEventListener('click', (e) => { if (e.target === els.settingsOverlay) closeSettings(); });
+
+    els.btnAddTemplate.addEventListener('click', () => {
+      const templates = loadSettings().templates;
+      templates.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
+      saveSettings({ templates });
+      renderTemplateEditor();
     });
 
+    els.btnTheme.addEventListener('click', () => {
+      applyTheme(loadSettings().theme === 'dark' ? 'light' : 'dark');
+      renderWeightChart();
+    });
+
+    els.btnExport.addEventListener('click', exportData);
+    els.btnImport.addEventListener('click', () => els.importFile.click());
+    els.importFile.addEventListener('change', (e) => {
+      if (e.target.files[0]) importData(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    $('#toggleDaily').addEventListener('click', () => toggleSection('dailySection'));
+    $('#toggleData').addEventListener('click', () => toggleSection('dataSection'));
+
+    window.addEventListener('resize', renderWeightChart);
+
+    runMigration();
+    applyTheme(loadSettings().theme);
+    els.mealTime.value = nowTimeStr();
     setDate(todayStr());
   </script>
 </body>
