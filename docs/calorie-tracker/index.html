@@ -76,10 +76,10 @@
       margin-bottom: 0.15rem; line-height: 1.1;
     }
     .period-stat {
-      font-size: 0.45rem; color: var(--muted); line-height: 1.12;
+      font-size: 0.42rem; color: var(--muted); line-height: 1.1;
     }
     .period-stat .val {
-      display: block; font-size: 0.48rem; font-weight: 600; color: var(--text);
+      display: block; font-size: 0.45rem; font-weight: 600; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .period-stat .val.good { color: var(--success); }
@@ -308,6 +308,7 @@
         <span class="drag-handle" aria-hidden="true">⋮⋮</span>
         <section class="period-summary">
           <div class="section-title">สรุปย้อนหลัง</div>
+          <p class="hint" style="padding:0 0.15rem 0.25rem;font-size:0.5rem">W น้ำหนัก · C Bal · P Prot · B เบิร์น · E Est.</p>
           <div class="period-grid" id="periodGrid"></div>
         </section>
       </div>
@@ -466,8 +467,9 @@
             <span class="chevron">▼</span>
           </div>
           <div class="section-body" style="margin-top:0.5rem">
-            <p class="hint" style="margin-bottom:0.4rem">Export ก่อนอัปเดตเว็บ</p>
+            <p class="hint" id="autoBackupStatus" style="margin-bottom:0.4rem">สำรองอัตโนมัติ: ปิด — ตั้งไฟล์ครั้งเดียว ทับไฟล์เดิมทุกครั้งที่มีการเปลี่ยนแปลง</p>
             <div class="data-actions">
+              <button type="button" class="btn btn-ghost" id="btnAutoBackup">📁 ตั้งไฟล์สำรอง</button>
               <button type="button" class="btn btn-ghost" id="btnExport">Export</button>
               <button type="button" class="btn btn-ghost" id="btnImport">Import</button>
               <input type="file" id="importFile" accept=".json">
@@ -598,7 +600,8 @@
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
-    const WEIGHT_ANOMALY_KG = 2;
+    const BACKUP_FILENAME = 'calorie-tracker-backup.json';
+    const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -617,6 +620,8 @@
     };
 
     let chartPeriodDays = 30;
+    let backupFileHandle = null;
+    let backupDebounceTimer = null;
 
     const DEFAULT_TEMPLATES = [
       { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
@@ -674,6 +679,7 @@
       btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
+      btnAutoBackup: $('#btnAutoBackup'), autoBackupStatus: $('#autoBackupStatus'),
       btnQuickTemplate: $('#btnQuickTemplate'),
       quickTemplateOverlay: $('#quickTemplateOverlay'),
       quickTemplateName: $('#quickTemplateName'), quickTemplateVal: $('#quickTemplateVal'),
@@ -751,6 +757,7 @@
       const next = { ...cur, ...partial };
       if (partial.profile) next.profile = { ...cur.profile, ...partial.profile };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      scheduleAutoBackup();
     }
 
     function getWeightLog() { return loadSettings().profile.weightLog || {}; }
@@ -864,6 +871,7 @@
         meals: data.meals ?? [],
         exercises: (data.exercises ?? []).map(migrateExercise),
       }));
+      scheduleAutoBackup();
     }
 
     function runMigration() {
@@ -972,6 +980,13 @@
       if (r <= 0) return { text: '—', cls: 'neutral' };
       return { text: '↓' + r, cls: 'burn' };
     }
+    function formatEst(kg, days) {
+      if (!days) return { text: '—', cls: 'neutral' };
+      const r = Math.round(kg * 100) / 100;
+      if (r < 0) return { text: '↓' + Math.abs(r), cls: 'good' };
+      if (r > 0) return { text: '↑' + r, cls: 'bad' };
+      return { text: '0', cls: 'neutral' };
+    }
 
     function dayHasActivity(data) {
       return data.meals.length > 0 || (data.exercises && data.exercises.length > 0);
@@ -979,11 +994,15 @@
 
     function calcPeriodSummary(endDate, days) {
       const mult = loadSettings().proteinMultiplier;
-      let sw = null, ew = null, tb = 0, tps = 0, dm = 0, totalBurnKcal = 0;
+      let sw = null, ew = null, tb = 0, tps = 0, dm = 0, de = 0, totalBurnKcal = 0, totalEstKg = 0;
       getDateRange(endDate, days).forEach((date) => {
         const data = loadDay(date), w = getWeightOnDate(date), st = calculate(data, w);
         totalBurnKcal += st.exercise;
-        if (w > 0) { if (sw === null) sw = w; ew = w; }
+        if (w > 0) {
+          if (sw === null) sw = w; ew = w;
+          totalEstKg += st.weightLoss;
+          de++;
+        }
         if (dayHasActivity(data)) {
           dm++; tb += st.balance;
           const tgt = w > 0 ? w * mult : (ew || 0) * mult;
@@ -995,7 +1014,9 @@
         totalBalance: tb,
         totalProteinShortfall: tps,
         burnKg: totalBurnKcal / KCAL_PER_KG,
+        totalEstKg,
         daysWithMeals: dm,
+        daysWithEst: de,
       };
     }
 
@@ -1005,14 +1026,15 @@
       PERIODS.forEach(({ days, label }) => {
         const s = calcPeriodSummary(end, days);
         const w = formatWC(s.weightChange), c = formatBal(s.totalBalance), p = formatProt(s.totalProteinShortfall, s.daysWithMeals);
-        const b = formatBurn(s.burnKg);
+        const b = formatBurn(s.burnKg), e = formatEst(s.totalEstKg, s.daysWithEst);
         const card = document.createElement('div');
         card.className = 'period-card';
         card.innerHTML = '<div class="period-label">' + label + '</div>'
           + '<div class="period-stat">W<span class="val ' + w.cls + '">' + w.text + '</span></div>'
           + '<div class="period-stat">C<span class="val ' + c.cls + '">' + c.text + '</span></div>'
           + '<div class="period-stat">P<span class="val ' + p.cls + '">' + p.text + '</span></div>'
-          + '<div class="period-stat">B<span class="val ' + b.cls + '">' + b.text + '</span></div>';
+          + '<div class="period-stat">B<span class="val ' + b.cls + '">' + b.text + '</span></div>'
+          + '<div class="period-stat">E<span class="val ' + e.cls + '">' + e.text + '</span></div>';
         els.periodGrid.appendChild(card);
       });
     }
@@ -1639,15 +1661,112 @@
       $('meta[name="theme-color"]').content = t === 'dark' ? '#0f172a' : '#f1f5f9';
     }
 
-    function exportData() {
-      const payload = { version: 4, exportedAt: new Date().toISOString(), data: {} };
+    function buildExportPayload() {
+      const payload = { version: 5, exportedAt: new Date().toISOString(), data: {} };
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k?.startsWith(STORAGE_PREFIX)) payload.data[k] = localStorage.getItem(k);
       }
+      return payload;
+    }
+
+    function openBackupDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(BACKUP_HANDLE_DB, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('handles');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
+      });
+    }
+
+    async function storeBackupHandle(handle) {
+      const db = await openBackupDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(handle, 'backup');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function loadStoredBackupHandle() {
+      if (!('showSaveFilePicker' in window)) return null;
+      try {
+        const db = await openBackupDB();
+        const handle = await new Promise((resolve, reject) => {
+          const tx = db.transaction('handles');
+          const req = tx.objectStore('handles').get('backup');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+        if (!handle) return null;
+        let perm = await handle.queryPermission({ mode: 'writable' });
+        if (perm !== 'granted') perm = await handle.requestPermission({ mode: 'writable' });
+        return perm === 'granted' ? handle : null;
+      } catch { return null; }
+    }
+
+    async function writeBackupToHandle(handle) {
+      const writable = await handle.createWritable();
+      await writable.write(JSON.stringify(buildExportPayload(), null, 2));
+      await writable.close();
+    }
+
+    function updateAutoBackupStatus() {
+      if (!els.autoBackupStatus) return;
+      if (backupFileHandle) {
+        els.autoBackupStatus.textContent = 'สำรองอัตโนมัติ: เปิด — ทับ ' + BACKUP_FILENAME + ' ทุกครั้งที่เปลี่ยนข้อมูล';
+        els.autoBackupStatus.style.color = 'var(--success)';
+      } else {
+        els.autoBackupStatus.textContent = 'สำรองอัตโนมัติ: ปิด — ตั้งไฟล์ครั้งเดียว ทับไฟล์เดิมทุกครั้งที่มีการเปลี่ยนแปลง';
+        els.autoBackupStatus.style.color = '';
+      }
+    }
+
+    function scheduleAutoBackup() {
+      if (!backupFileHandle) return;
+      clearTimeout(backupDebounceTimer);
+      backupDebounceTimer = setTimeout(async () => {
+        try {
+          await writeBackupToHandle(backupFileHandle);
+        } catch {
+          backupFileHandle = null;
+          updateAutoBackupStatus();
+          showToast('สำรองอัตโนมัติล้มเหลว — ตั้งไฟล์ใหม่', 'error');
+        }
+      }, 1200);
+    }
+
+    async function setupAutoBackup() {
+      if (!('showSaveFilePicker' in window)) {
+        showToast('ใช้ Chrome/Edge บนเดสก์ท็อปเพื่อสำรองอัตโนมัติ', 'error');
+        return;
+      }
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: BACKUP_FILENAME,
+          types: [{ description: 'JSON Backup', accept: { 'application/json': ['.json'] } }],
+        });
+        backupFileHandle = handle;
+        await storeBackupHandle(handle);
+        await writeBackupToHandle(handle);
+        updateAutoBackupStatus();
+        showToast('ตั้งสำรองอัตโนมัติแล้ว — ทับไฟล์เดิมทุกครั้ง', 'success');
+      } catch { /* cancelled */ }
+    }
+
+    async function initAutoBackup() {
+      backupFileHandle = await loadStoredBackupHandle();
+      updateAutoBackupStatus();
+    }
+
+    function exportData() {
+      const payload = buildExportPayload();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
-      a.download = 'calorie-backup-' + todayStr() + '.json'; a.click();
+      a.download = BACKUP_FILENAME;
+      a.click();
+      URL.revokeObjectURL(a.href);
       showToast('Export สำเร็จ', 'success');
     }
 
@@ -1662,6 +1781,7 @@
             if (k.startsWith(STORAGE_PREFIX)) { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); n++; }
           });
           runMigration(); applyBlockOrder(); refresh();
+          scheduleAutoBackup();
           showToast('Import ' + n + ' รายการ', 'success');
         } catch { showToast('ไฟล์ไม่ถูกต้อง', 'error'); }
       };
@@ -1791,6 +1911,7 @@
     };
     els.btnTheme.onclick = () => { applyTheme(loadSettings().theme === 'dark' ? 'light' : 'dark'); renderCharts(); };
     els.btnExport.onclick = exportData;
+    els.btnAutoBackup.onclick = setupAutoBackup;
     els.btnImport.onclick = () => els.importFile.click();
     els.importFile.onchange = (e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ''; };
     $('#toggleData').onclick = () => $('#dataSection').classList.toggle('collapsed');
@@ -1801,6 +1922,7 @@
     applyTheme(loadSettings().theme);
     applyBlockOrder();
     initDragReorder();
+    initAutoBackup();
     setChartPeriod(loadSettings().chartPeriodDays || 30);
     els.mealTime.value = nowTimeStr();
     els.exerciseTime.value = nowTimeStr();
