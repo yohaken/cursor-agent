@@ -35,27 +35,68 @@
       padding-bottom: calc(1.5rem + var(--safe-bottom));
     }
 
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 1rem;
+    .app { max-width: 480px; margin: 0 auto; padding: 1rem; }
+
+    header { margin-bottom: 1rem; }
+    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+    header p { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+    .period-summary {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 0.85rem 0.75rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
     }
 
-    header {
-      margin-bottom: 1.25rem;
+    .period-summary .section-title {
+      margin-bottom: 0.65rem;
+      padding: 0 0.25rem;
     }
 
-    header h1 {
-      font-size: 1.35rem;
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .period-card {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 0.6rem 0.5rem;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .period-card .period-label {
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.45rem;
     }
 
-    header p {
+    .period-stat {
+      font-size: 0.68rem;
       color: var(--muted);
-      font-size: 0.85rem;
-      margin-top: 0.15rem;
+      line-height: 1.35;
+      margin-bottom: 0.2rem;
     }
+
+    .period-stat:last-child { margin-bottom: 0; }
+
+    .period-stat .val {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 0.05rem;
+    }
+
+    .period-stat .val.good { color: var(--success); }
+    .period-stat .val.bad { color: var(--danger); }
+    .period-stat .val.neutral { color: var(--muted); }
 
     .date-nav {
       display: flex;
@@ -81,26 +122,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s;
     }
 
     .date-nav button:active { background: var(--border); }
 
-    .date-display {
-      text-align: center;
-      flex: 1;
-    }
+    .date-display { text-align: center; flex: 1; }
 
     .date-display .label {
       font-size: 0.75rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-    }
-
-    .date-display .value {
-      font-size: 1rem;
-      font-weight: 600;
     }
 
     .date-display input[type="date"] {
@@ -130,12 +162,19 @@
 
     .stat-card.full { grid-column: 1 / -1; }
 
+    .stat-card .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.35rem;
+      margin-bottom: 0.25rem;
+    }
+
     .stat-card .label {
       font-size: 0.72rem;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      margin-bottom: 0.25rem;
     }
 
     .stat-card .value {
@@ -144,17 +183,33 @@
       letter-spacing: -0.02em;
     }
 
-    .stat-card .unit {
-      font-size: 0.8rem;
+    .stat-card .unit { font-size: 0.8rem; color: var(--muted); font-weight: 400; }
+
+    .stat-card .sub {
+      font-size: 0.72rem;
       color: var(--muted);
-      font-weight: 400;
+      margin-top: 0.2rem;
     }
 
     .stat-card.cal .value { color: var(--warning); }
     .stat-card.prot .value { color: var(--protein); }
+    .stat-card.prot.below-target .value { color: var(--danger); }
+    .stat-card.prot.below-target { border: 1px solid rgba(248, 113, 113, 0.35); }
     .stat-card.balance.positive .value { color: var(--success); }
     .stat-card.balance.negative .value { color: var(--danger); }
     .stat-card.loss .value { color: var(--accent); }
+
+    .btn-pencil {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0.15rem 0.3rem;
+      line-height: 1;
+    }
+
+    .btn-pencil:active { color: var(--accent); }
 
     .section {
       background: var(--surface);
@@ -173,10 +228,7 @@
       margin-bottom: 0.85rem;
     }
 
-    .field {
-      margin-bottom: 0.85rem;
-    }
-
+    .field { margin-bottom: 0.85rem; }
     .field:last-child { margin-bottom: 0; }
 
     .field label {
@@ -196,18 +248,12 @@
       padding: 0.65rem 0.75rem;
       font-size: 1rem;
       outline: none;
-      transition: border-color 0.15s;
     }
 
     .field input:focus,
-    .field textarea:focus {
-      border-color: var(--accent);
-    }
+    .field textarea:focus { border-color: var(--accent); }
 
-    .field textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
+    .field textarea { resize: vertical; min-height: 60px; }
 
     .field-row {
       display: grid;
@@ -215,14 +261,8 @@
       gap: 0.65rem;
     }
 
-    .meal-add {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .meal-add input {
-      flex: 1;
-    }
+    .meal-add { display: flex; gap: 0.5rem; }
+    .meal-add input { flex: 1; }
 
     .btn {
       background: var(--accent-dim);
@@ -234,23 +274,12 @@
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: opacity 0.15s;
     }
 
     .btn:active { opacity: 0.8; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .btn-ghost {
-      background: var(--surface-2);
-      color: var(--text);
-    }
-
-    .btn-danger {
-      background: transparent;
-      color: var(--danger);
-      padding: 0.4rem 0.6rem;
-      font-size: 0.8rem;
-    }
+    .btn-ghost { background: var(--surface-2); color: var(--text); }
+    .btn-danger { background: transparent; color: var(--danger); padding: 0.4rem 0.6rem; font-size: 0.8rem; }
 
     .btn-icon {
       width: 36px;
@@ -262,10 +291,7 @@
       font-size: 1rem;
     }
 
-    .meal-list {
-      list-style: none;
-      margin-top: 0.85rem;
-    }
+    .meal-list { list-style: none; margin-top: 0.85rem; }
 
     .meal-item {
       display: flex;
@@ -277,28 +303,10 @@
     }
 
     .meal-item:last-child { border-bottom: none; }
-
-    .meal-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .meal-info .meal-nums {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    .meal-info .meal-nums span {
-      color: var(--muted);
-      font-weight: 400;
-      font-size: 0.82rem;
-    }
-
-    .meal-actions {
-      display: flex;
-      gap: 0.25rem;
-      flex-shrink: 0;
-    }
+    .meal-info { flex: 1; min-width: 0; }
+    .meal-info .meal-nums { font-weight: 600; font-size: 0.95rem; }
+    .meal-info .meal-nums span { color: var(--muted); font-weight: 400; font-size: 0.82rem; }
+    .meal-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
 
     .empty-meals {
       text-align: center;
@@ -307,11 +315,7 @@
       padding: 1rem 0 0.25rem;
     }
 
-    .hint {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 0.35rem;
-    }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
 
     .bmr-note {
       font-size: 0.78rem;
@@ -341,9 +345,7 @@
       text-align: center;
     }
 
-    .error-toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
+    .error-toast.show { transform: translateX(-50%) translateY(0); }
 
     .edit-overlay {
       display: none;
@@ -368,17 +370,9 @@
       box-shadow: var(--shadow);
     }
 
-    .edit-sheet h3 {
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .edit-actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-
+    .edit-sheet h3 { font-size: 1rem; margin-bottom: 0.35rem; }
+    .edit-sheet .sheet-desc { font-size: 0.82rem; color: var(--muted); margin-bottom: 1rem; }
+    .edit-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
     .edit-actions .btn { flex: 1; }
 
     @media (min-width: 480px) {
@@ -394,6 +388,11 @@
       <p>ติดตามแคลอรี่และโปรตีนรายวัน</p>
     </header>
 
+    <section class="period-summary" aria-label="สรุปช่วงเวลา">
+      <div class="section-title">สรุปย้อนหลัง</div>
+      <div class="period-grid" id="periodGrid"></div>
+    </section>
+
     <nav class="date-nav" aria-label="เลือกวันที่">
       <button type="button" id="btnPrevDay" aria-label="วันก่อนหน้า">‹</button>
       <div class="date-display">
@@ -408,11 +407,16 @@
         <div class="label">Total Cal</div>
         <div class="value" id="totalCal">0</div>
         <div class="unit">kcal</div>
+        <div class="sub" id="calSub">เป้าหมาย: ขาดแคล (ลดน้ำหนัก)</div>
       </div>
-      <div class="stat-card prot">
-        <div class="label">Total Protein</div>
+      <div class="stat-card prot" id="protCard">
+        <div class="label-row">
+          <div class="label">Protein</div>
+          <button type="button" class="btn-pencil" id="btnEditProtein" aria-label="ตั้งเป้าโปรตีน">✎</button>
+        </div>
         <div class="value" id="totalProt">0</div>
         <div class="unit">g</div>
+        <div class="sub" id="protSub">เป้า — g</div>
       </div>
       <div class="stat-card balance" id="balanceCard">
         <div class="label">Balance (Deficit)</div>
@@ -475,13 +479,31 @@
     </div>
   </div>
 
+  <div class="edit-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="edit-sheet">
+      <h3 id="settingsTitle">ตั้งเป้าโปรตีน</h3>
+      <p class="sheet-desc">เป้าหมาย = น้ำหนัก (kg) × ตัวคูณ<br>โปรตีนเป็นค่าบังคับ — ไม่ถึงเป้าจะแสดงสีแดง</p>
+      <div class="field">
+        <label for="proteinMultiplier">ตัวคูณโปรตีน (เช่น 1.55)</label>
+        <input type="number" id="proteinMultiplier" inputmode="decimal" step="0.01" min="0.5" max="3" placeholder="1.55">
+      </div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCancelSettings">ยกเลิก</button>
+        <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
   <div class="error-toast" id="errorToast" role="alert"></div>
 
   <script>
     const STORAGE_PREFIX = 'calorieTracker:';
+    const SETTINGS_KEY = 'calorieTracker:settings';
     const MAX_MEALS = 7;
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
+    const DEFAULT_PROTEIN_MULT = 1.55;
+    const PERIOD_DAYS = [3, 7, 30];
 
     let currentDate = todayStr();
     let editingMealId = null;
@@ -489,12 +511,16 @@
     const $ = (sel) => document.querySelector(sel);
 
     const els = {
+      periodGrid: $('#periodGrid'),
       datePicker: $('#datePicker'),
       dateLabel: $('#dateLabel'),
       btnPrevDay: $('#btnPrevDay'),
       btnNextDay: $('#btnNextDay'),
       totalCal: $('#totalCal'),
       totalProt: $('#totalProt'),
+      protCard: $('#protCard'),
+      protSub: $('#protSub'),
+      calSub: $('#calSub'),
       balance: $('#balance'),
       balanceCard: $('#balanceCard'),
       weightLoss: $('#weightLoss'),
@@ -512,6 +538,11 @@
       editMealInput: $('#editMealInput'),
       btnCancelEdit: $('#btnCancelEdit'),
       btnSaveEdit: $('#btnSaveEdit'),
+      settingsOverlay: $('#settingsOverlay'),
+      proteinMultiplier: $('#proteinMultiplier'),
+      btnEditProtein: $('#btnEditProtein'),
+      btnCancelSettings: $('#btnCancelSettings'),
+      btnSaveSettings: $('#btnSaveSettings'),
       errorToast: $('#errorToast'),
     };
 
@@ -526,8 +557,7 @@
     }
 
     function formatDateLabel(dateStr) {
-      const today = todayStr();
-      if (dateStr === today) return 'วันนี้';
+      if (dateStr === todayStr()) return 'วันนี้';
       const d = new Date(dateStr + 'T12:00:00');
       return d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     }
@@ -536,13 +566,23 @@
       return STORAGE_PREFIX + dateStr;
     }
 
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return { proteinMultiplier: DEFAULT_PROTEIN_MULT };
+        const s = JSON.parse(raw);
+        return { proteinMultiplier: parseFloat(s.proteinMultiplier) || DEFAULT_PROTEIN_MULT };
+      } catch {
+        return { proteinMultiplier: DEFAULT_PROTEIN_MULT };
+      }
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
     function defaultDayData() {
-      return {
-        weight: '',
-        exerciseBurn: '',
-        workoutProgram: '',
-        meals: [],
-      };
+      return { weight: '', exerciseBurn: '', workoutProgram: '', meals: [] };
     }
 
     function loadDay(dateStr) {
@@ -581,15 +621,11 @@
     function parseMealInput(text) {
       const trimmed = text.trim();
       if (!trimmed) return null;
-
       const parts = trimmed.split(',').map((s) => s.trim());
       if (parts.length !== 2) return null;
-
       const calories = parseFloat(parts[0]);
       const protein = parseFloat(parts[1]);
-
       if (isNaN(calories) || isNaN(protein) || calories < 0 || protein < 0) return null;
-
       return { calories, protein };
     }
 
@@ -597,6 +633,12 @@
       const w = parseFloat(weight);
       if (isNaN(w) || w <= 0) return 0;
       return w * BMR_MULTIPLIER;
+    }
+
+    function getProteinTarget(weight) {
+      const w = parseFloat(weight);
+      if (isNaN(w) || w <= 0) return 0;
+      return Math.round(w * loadSettings().proteinMultiplier * 10) / 10;
     }
 
     function calculate(data) {
@@ -607,22 +649,143 @@
       const bsum = baseBMR + exercise;
       const balance = totalCal - bsum;
       const weightLoss = bsum > 0 || totalCal > 0 ? balance / KCAL_PER_KG : 0;
+      const proteinTarget = getProteinTarget(data.weight);
+      return { totalCal, totalProt, baseBMR, exercise, bsum, balance, weightLoss, proteinTarget };
+    }
 
-      return { totalCal, totalProt, baseBMR, exercise, bsum, balance, weightLoss };
+    function getDateRange(endDate, days) {
+      const dates = [];
+      for (let i = days - 1; i >= 0; i--) dates.push(shiftDate(endDate, -i));
+      return dates;
+    }
+
+    function formatWeightChange(delta) {
+      if (delta === null) return { text: '—', cls: 'neutral' };
+      const rounded = Math.round(delta * 10) / 10;
+      if (rounded < 0) return { text: 'ลง ' + Math.abs(rounded) + ' kg', cls: 'good' };
+      if (rounded > 0) return { text: 'ขึ้น ' + rounded + ' kg', cls: 'bad' };
+      return { text: 'คงที่', cls: 'neutral' };
+    }
+
+    function formatBalance(total) {
+      if (total === 0) return { text: '—', cls: 'neutral' };
+      const rounded = Math.round(total);
+      if (rounded < 0) return { text: 'ขาด ' + Math.abs(rounded).toLocaleString() + ' kcal', cls: 'good' };
+      if (rounded > 0) return { text: 'เกิน ' + rounded.toLocaleString() + ' kcal', cls: 'bad' };
+      return { text: '0 kcal', cls: 'neutral' };
+    }
+
+    function formatProteinShortfall(totalShortfall, daysWithMeals) {
+      if (daysWithMeals === 0) return { text: '—', cls: 'neutral' };
+      const rounded = Math.round(totalShortfall);
+      if (rounded > 0) return { text: 'ขาดรวม ' + rounded + 'g', cls: 'bad' };
+      return { text: 'ถึงเป้าทุกวัน', cls: 'good' };
+    }
+
+    function calcPeriodSummary(endDate, periodDays) {
+      const dates = getDateRange(endDate, periodDays);
+      const mult = loadSettings().proteinMultiplier;
+      let startWeight = null;
+      let endWeight = null;
+      let totalBalance = 0;
+      let totalProteinShortfall = 0;
+      let daysWithMeals = 0;
+      let hasAnyData = false;
+
+      dates.forEach((date) => {
+        const data = loadDay(date);
+        const stats = calculate(data);
+        const w = parseFloat(data.weight);
+
+        if (!isNaN(w) && w > 0) {
+          if (startWeight === null) startWeight = w;
+          endWeight = w;
+          hasAnyData = true;
+        }
+
+        if (data.meals.length > 0) {
+          hasAnyData = true;
+          daysWithMeals++;
+          totalBalance += stats.balance;
+          const target = w > 0 ? w * mult : (endWeight || 0) * mult;
+          if (target > 0 && stats.totalProt < target) {
+            totalProteinShortfall += target - stats.totalProt;
+          }
+        } else if (data.weight || data.exerciseBurn) {
+          hasAnyData = true;
+          totalBalance += stats.balance;
+        }
+      });
+
+      const weightChange = startWeight !== null && endWeight !== null
+        ? endWeight - startWeight
+        : null;
+
+      return {
+        hasAnyData,
+        weightChange,
+        totalBalance,
+        totalProteinShortfall,
+        daysWithMeals,
+      };
+    }
+
+    function renderPeriodSummary() {
+      const endDate = currentDate <= todayStr() ? currentDate : todayStr();
+      els.periodGrid.innerHTML = '';
+
+      PERIOD_DAYS.forEach((days) => {
+        const s = calcPeriodSummary(endDate, days);
+        const w = formatWeightChange(s.weightChange);
+        const c = formatBalance(s.totalBalance);
+        const p = formatProteinShortfall(s.totalProteinShortfall, s.daysWithMeals);
+
+        const card = document.createElement('div');
+        card.className = 'period-card';
+        card.innerHTML =
+          '<div class="period-label">' + days + ' วัน</div>'
+          + '<div class="period-stat">น้ำหนัก<span class="val ' + w.cls + '">' + w.text + '</span></div>'
+          + '<div class="period-stat">แคลอรี่<span class="val ' + c.cls + '">' + c.text + '</span></div>'
+          + '<div class="period-stat">โปรตีน<span class="val ' + p.cls + '">' + p.text + '</span></div>';
+        els.periodGrid.appendChild(card);
+      });
     }
 
     function renderDashboard(stats) {
       els.totalCal.textContent = Math.round(stats.totalCal);
-      els.totalProt.textContent = Math.round(stats.totalProt * 10) / 10;
+
+      const protRounded = Math.round(stats.totalProt * 10) / 10;
+      els.totalProt.textContent = protRounded;
+
+      const target = stats.proteinTarget;
+      const mult = loadSettings().proteinMultiplier;
+      if (target > 0) {
+        els.protSub.textContent = 'เป้า ' + target + 'g (' + mult + '× น้ำหนัก)';
+        const below = protRounded < target;
+        els.protCard.classList.toggle('below-target', below);
+        if (below) {
+          els.protSub.textContent = 'ขาด ' + Math.round((target - protRounded) * 10) / 10 + 'g · เป้า ' + target + 'g';
+        }
+      } else {
+        els.protSub.textContent = 'กรอกน้ำหนักเพื่อคำนวณเป้า';
+        els.protCard.classList.remove('below-target');
+      }
 
       const balRounded = Math.round(stats.balance);
       els.balance.textContent = (balRounded > 0 ? '+' : '') + balRounded;
       els.balanceCard.classList.toggle('positive', stats.balance > 0);
       els.balanceCard.classList.toggle('negative', stats.balance < 0);
 
+      if (stats.balance < 0) {
+        els.calSub.textContent = 'ขาดแคล ' + Math.abs(balRounded) + ' kcal ✓';
+      } else if (stats.balance > 0) {
+        els.calSub.textContent = 'เกินแคล ' + balRounded + ' kcal';
+      } else {
+        els.calSub.textContent = 'เป้าหมาย: ขาดแคล (ลดน้ำหนัก)';
+      }
+
       const wl = stats.weightLoss;
-      const wlStr = (wl >= 0 ? '+' : '') + (Math.round(wl * 1000) / 1000);
-      els.weightLoss.textContent = wlStr;
+      els.weightLoss.textContent = (wl >= 0 ? '+' : '') + (Math.round(wl * 1000) / 1000);
 
       els.bsum.innerHTML = Math.round(stats.bsum) + ' <span class="unit">kcal</span>';
 
@@ -664,6 +827,7 @@
       els.workoutProgram.value = data.workoutProgram;
       renderMeals(data.meals);
       renderDashboard(calculate(data));
+      renderPeriodSummary();
     }
 
     function setDate(dateStr) {
@@ -680,26 +844,13 @@
         showError('รูปแบบไม่ถูกต้อง — ใช้ Cal,Protein เช่น 450,30');
         return;
       }
-
       const data = loadDay(currentDate);
       if (data.meals.length >= MAX_MEALS) {
         showError('เพิ่มได้สูงสุด ' + MAX_MEALS + ' มื้อต่อวัน');
         return;
       }
-
-      data.meals.push({
-        id: crypto.randomUUID(),
-        calories: parsed.calories,
-        protein: parsed.protein,
-      });
-
-      saveDay(currentDate, {
-        weight: els.weight.value,
-        exerciseBurn: els.exerciseBurn.value,
-        workoutProgram: els.workoutProgram.value,
-        meals: data.meals,
-      });
-
+      data.meals.push({ id: crypto.randomUUID(), calories: parsed.calories, protein: parsed.protein });
+      saveDay(currentDate, { ...getFormData(), meals: data.meals });
       els.mealInput.value = '';
       refresh();
     }
@@ -707,12 +858,7 @@
     function deleteMeal(id) {
       const data = loadDay(currentDate);
       data.meals = data.meals.filter((m) => m.id !== id);
-      saveDay(currentDate, {
-        weight: els.weight.value,
-        exerciseBurn: els.exerciseBurn.value,
-        workoutProgram: els.workoutProgram.value,
-        meals: data.meals,
-      });
+      saveDay(currentDate, { ...getFormData(), meals: data.meals });
       refresh();
     }
 
@@ -736,22 +882,34 @@
         showError('รูปแบบไม่ถูกต้อง — ใช้ Cal,Protein เช่น 450,30');
         return;
       }
-
       const data = loadDay(currentDate);
       const meal = data.meals.find((m) => m.id === editingMealId);
       if (!meal) { closeEdit(); return; }
-
       meal.calories = parsed.calories;
       meal.protein = parsed.protein;
-
-      saveDay(currentDate, {
-        weight: els.weight.value,
-        exerciseBurn: els.exerciseBurn.value,
-        workoutProgram: els.workoutProgram.value,
-        meals: data.meals,
-      });
-
+      saveDay(currentDate, { ...getFormData(), meals: data.meals });
       closeEdit();
+      refresh();
+    }
+
+    function openSettings() {
+      els.proteinMultiplier.value = loadSettings().proteinMultiplier;
+      els.settingsOverlay.classList.add('open');
+      els.proteinMultiplier.focus();
+    }
+
+    function closeSettings() {
+      els.settingsOverlay.classList.remove('open');
+    }
+
+    function saveProteinSettings() {
+      const mult = parseFloat(els.proteinMultiplier.value);
+      if (isNaN(mult) || mult < 0.5 || mult > 3) {
+        showError('ตัวคูณต้องอยู่ระหว่าง 0.5 – 3.0');
+        return;
+      }
+      saveSettings({ proteinMultiplier: mult });
+      closeSettings();
       refresh();
     }
 
@@ -779,6 +937,7 @@
       document.getElementById(id).addEventListener('input', () => {
         persistForm();
         renderDashboard(calculate(getFormData()));
+        renderPeriodSummary();
       });
     });
 
@@ -790,9 +949,8 @@
     els.mealList.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
-      const id = btn.dataset.id;
-      if (btn.dataset.action === 'edit') openEdit(id);
-      if (btn.dataset.action === 'delete') deleteMeal(id);
+      if (btn.dataset.action === 'edit') openEdit(btn.dataset.id);
+      if (btn.dataset.action === 'delete') deleteMeal(btn.dataset.id);
     });
 
     els.btnCancelEdit.addEventListener('click', closeEdit);
@@ -800,10 +958,20 @@
     els.editOverlay.addEventListener('click', (e) => {
       if (e.target === els.editOverlay) closeEdit();
     });
-
     els.editMealInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
       if (e.key === 'Escape') closeEdit();
+    });
+
+    els.btnEditProtein.addEventListener('click', openSettings);
+    els.btnCancelSettings.addEventListener('click', closeSettings);
+    els.btnSaveSettings.addEventListener('click', saveProteinSettings);
+    els.settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === els.settingsOverlay) closeSettings();
+    });
+    els.proteinMultiplier.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); saveProteinSettings(); }
+      if (e.key === 'Escape') closeSettings();
     });
 
     setDate(todayStr());
