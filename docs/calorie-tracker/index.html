@@ -252,9 +252,12 @@
     }
     .weight-log-item.anomaly { background: rgba(248,113,113,0.08); border-radius: 6px; padding: 0.5rem 0.35rem; }
     .weight-log-item .wl-date { font-size: 0.75rem; flex: 1; min-width: 0; }
+    .weight-log-item .wl-inputs { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .weight-log-item .wl-field { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+    .weight-log-item .wl-field span { font-size: 0.5rem; color: var(--muted); }
     .weight-log-item input {
-      width: 72px; background: var(--bg); border: 1px solid var(--surface-2);
-      border-radius: 6px; color: var(--text); padding: 0.35rem; font-size: 16px; text-align: right;
+      width: 58px; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 6px; color: var(--text); padding: 0.35rem 0.25rem; font-size: 16px; text-align: right;
     }
 
     .bmr-note {
@@ -404,7 +407,7 @@
               <input type="number" id="profileWaist" inputmode="decimal" step="0.1" min="0">
             </div>
           </div>
-          <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก</button>
+          <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก & เอว</button>
           <div class="field-row" style="margin-top:0.45rem">
             <div class="field">
               <label for="targetWeight">🎯 เป้าน้ำหนัก kg</label>
@@ -507,8 +510,8 @@
 
   <div class="edit-overlay" id="weightHistoryOverlay">
     <div class="edit-sheet">
-      <h3>ประวัติน้ำหนัก</h3>
-      <p class="sheet-desc">แก้ค่าที่บันทึกผิด · แถวสีแดง = เปลี่ยนแปลงผิดปกติ (&gt;2kg จากวันก่อน)</p>
+      <h3>ประวัติน้ำหนัก & เอว</h3>
+      <p class="sheet-desc">แก้ค่าที่บันทึกผิด · แถวสีแดง = เปลี่ยนแปลงผิดปกติ (น้ำหนัก &gt;2kg หรือเอว &gt;3cm จากวันก่อน)</p>
       <ul class="weight-log-list" id="weightLogList"></ul>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCloseWeightHistory">ปิด</button>
@@ -600,6 +603,8 @@
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
+    const WEIGHT_ANOMALY_KG = 2;
+    const WAIST_ANOMALY_CM = 3;
     const BACKUP_FILENAME = 'calorie-tracker-backup.json';
     const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
 
@@ -1262,29 +1267,45 @@
       renderCharts();
     }
 
-    function isWeightAnomaly(date, weight, log) {
+    function isLogAnomaly(date, value, log, threshold) {
       const sorted = Object.keys(log).filter((d) => d !== date && /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
       const prev = sorted.filter((d) => d < date).pop();
       const next = sorted.find((d) => d > date);
-      const w = parseFloat(weight);
-      if (prev && Math.abs(w - parseFloat(log[prev])) > WEIGHT_ANOMALY_KG) return true;
-      if (next && Math.abs(w - parseFloat(log[next])) > WEIGHT_ANOMALY_KG) return true;
+      const v = parseFloat(value);
+      if (prev && Math.abs(v - parseFloat(log[prev])) > threshold) return true;
+      if (next && Math.abs(v - parseFloat(log[next])) > threshold) return true;
       return false;
     }
 
+    function isWeightAnomaly(date, weight, log) {
+      return isLogAnomaly(date, weight, log, WEIGHT_ANOMALY_KG);
+    }
+
+    function isWaistAnomaly(date, waist, log) {
+      return isLogAnomaly(date, waist, log, WAIST_ANOMALY_CM);
+    }
+
     function openWeightHistory() {
-      const log = getWeightLog();
-      const dates = Object.keys(log).sort().reverse();
+      const weightLog = getWeightLog();
+      const waistLog = getWaistLog();
+      const dates = [...new Set([...Object.keys(weightLog), ...Object.keys(waistLog)])].sort().reverse();
       els.weightLogList.innerHTML = '';
       if (!dates.length) {
-        els.weightLogList.innerHTML = '<li class="hint" style="padding:1rem">ยังไม่มีประวัติ — กรอกน้ำหนักเพื่อบันทึก</li>';
+        els.weightLogList.innerHTML = '<li class="hint" style="padding:1rem">ยังไม่มีประวัติ — กรอกน้ำหนักหรือเอวเพื่อบันทึก</li>';
       }
       dates.forEach((date) => {
+        const w = weightLog[date];
+        const wa = waistLog[date];
+        const wAnom = w != null && isWeightAnomaly(date, w, weightLog);
+        const waAnom = wa != null && isWaistAnomaly(date, wa, waistLog);
         const li = document.createElement('li');
-        li.className = 'weight-log-item' + (isWeightAnomaly(date, log[date], log) ? ' anomaly' : '');
+        li.className = 'weight-log-item' + (wAnom || waAnom ? ' anomaly' : '');
         li.dataset.date = date;
         li.innerHTML = '<span class="wl-date">' + formatDateLabel(date) + '<br><small style="color:var(--muted)">' + date + '</small></span>'
-          + '<input type="number" step="0.1" value="' + log[date] + '" data-wl-input>'
+          + '<div class="wl-inputs">'
+          + '<label class="wl-field"><span>kg</span><input type="number" step="0.1" value="' + (w != null ? w : '') + '" data-wl-weight placeholder="—"></label>'
+          + '<label class="wl-field"><span>cm</span><input type="number" step="0.1" value="' + (wa != null ? wa : '') + '" data-wl-waist placeholder="—"></label>'
+          + '</div>'
           + '<button type="button" class="btn btn-danger btn-icon" data-wl-del>✕</button>';
         els.weightLogList.appendChild(li);
       });
@@ -1292,20 +1313,30 @@
     }
 
     function saveWeightHistory() {
-      const log = { ...getWeightLog() };
+      const weightLog = { ...getWeightLog() };
+      const waistLog = { ...getWaistLog() };
       els.weightLogList.querySelectorAll('.weight-log-item').forEach((li) => {
         const date = li.dataset.date;
-        if (li.dataset.deleted) { delete log[date]; return; }
-        const inp = li.querySelector('[data-wl-input]');
-        const w = parseFloat(inp.value);
-        if (!isNaN(w) && w > 0) log[date] = w; else delete log[date];
+        if (li.dataset.deleted) {
+          delete weightLog[date];
+          delete waistLog[date];
+          return;
+        }
+        const wInp = li.querySelector('[data-wl-weight]');
+        const waInp = li.querySelector('[data-wl-waist]');
+        const w = parseFloat(wInp?.value);
+        const wa = parseFloat(waInp?.value);
+        if (!isNaN(w) && w > 0) weightLog[date] = w; else delete weightLog[date];
+        if (!isNaN(wa) && wa > 0) waistLog[date] = wa; else delete waistLog[date];
       });
-      const profile = { ...loadSettings().profile, weightLog: log };
-      profile.weight = String(getLatestWeightFromLog(log) || '');
+      const profile = { ...loadSettings().profile, weightLog, waistLog };
+      profile.weight = String(getLatestWeightFromLog(weightLog) || '');
+      const latestWaist = getLatestFromLog(waistLog);
+      if (latestWaist) profile.waist = String(latestWaist);
       saveSettings({ profile });
       els.weightHistoryOverlay.classList.remove('open');
       refresh();
-      showToast('บันทึกประวัติน้ำหนักแล้ว', 'success');
+      showToast('บันทึกประวัติน้ำหนัก & เอวแล้ว', 'success');
     }
 
     function openQuickTemplate() {
