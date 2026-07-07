@@ -129,8 +129,19 @@
     .mini-stat.bal.pos .val { color: var(--success); }
     .mini-stat.adj { cursor: pointer; }
     .mini-stat.adj .val { color: var(--accent); }
-    .mini-stat.est .val { color: var(--success); }
+    .mini-stat.est { border: 1px solid rgba(74, 222, 128, 0.35); }
+    .mini-stat.est .val { color: var(--success); font-size: 1.05rem; }
     .mini-stat.est.neg .val { color: var(--success); }
+    .bsum-strip .adj-link {
+      color: var(--accent); cursor: pointer; text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .goal-progress {
+      font-size: 0.62rem; color: var(--muted); margin-top: 0.35rem;
+      padding: 0.35rem 0.45rem; background: var(--bg); border-radius: 8px;
+      line-height: 1.4;
+    }
+    .goal-progress strong { color: var(--accent); }
 
     .section {
       background: var(--surface); border-radius: var(--radius);
@@ -221,6 +232,7 @@
       font-size: 0.55rem; color: var(--muted); margin-bottom: 0.08rem;
       display: flex; justify-content: space-between; align-items: center;
     }
+    .chart-goal-tag { font-size: 0.5rem; color: var(--success); font-weight: 600; }
     .chart-canvas {
       width: 100%; height: 52px; border-radius: 6px; background: var(--bg); display: block;
     }
@@ -330,13 +342,13 @@
             <div class="val" id="balance">0</div>
             <div class="sub" id="balSub">kcal</div>
           </div>
-          <div class="mini-stat adj" id="adjCard" title="แตะเพื่อปรับชดเชยพลังงานวันนี้">
-            <div class="lbl">ชดเชย <button type="button" class="info-btn" data-info="adj">ⓘ</button></div>
-            <div class="val sm" id="adjPct">0%</div>
-            <div class="sub" id="adjSub">+0 kcal</div>
+          <div class="mini-stat est" id="estCard">
+            <div class="lbl">Est. <button type="button" class="info-btn" data-info="loss">ⓘ</button></div>
+            <div class="val" id="estVal">—</div>
+            <div class="sub" id="estSub">กก. วันนี้</div>
           </div>
         </div>
-        <div class="bsum-strip" id="bsumStrip">BMR — · Est. — กก.</div>
+        <div class="bsum-strip" id="bsumStrip">BMR — · ชดเชย <span class="adj-link" id="adjLink">0%</span></div>
       </div>
 
       <div class="sortable-block" data-block-id="meals">
@@ -392,6 +404,17 @@
             </div>
           </div>
           <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก</button>
+          <div class="field-row" style="margin-top:0.45rem">
+            <div class="field">
+              <label for="targetWeight">🎯 เป้าน้ำหนัก kg</label>
+              <input type="number" id="targetWeight" inputmode="decimal" step="0.1" min="0" placeholder="เช่น 70">
+            </div>
+            <div class="field">
+              <label for="targetWaist">🎯 เป้าเอว cm</label>
+              <input type="number" id="targetWaist" inputmode="decimal" step="0.1" min="0" placeholder="เช่น 73">
+            </div>
+          </div>
+          <p class="goal-progress" id="goalProgress">ตั้งเป้าเพื่อดูความคืบหน้า — แสดงเส้นเป้าบนกราฟ</p>
         </section>
       </div>
 
@@ -408,8 +431,12 @@
           </div>
           <div class="chart-stack">
             <div class="chart-item">
-              <div class="chart-item-label"><span>น้ำหนัก (kg)</span></div>
+              <div class="chart-item-label"><span>น้ำหนัก (kg)</span><span id="chartWeightGoal" class="chart-goal-tag"></span></div>
               <canvas class="chart-canvas" id="chartWeight" data-chart="weight"></canvas>
+            </div>
+            <div class="chart-item">
+              <div class="chart-item-label"><span>รอบเอว (cm)</span><span id="chartWaistGoal" class="chart-goal-tag"></span></div>
+              <canvas class="chart-canvas" id="chartWaist" data-chart="waist"></canvas>
             </div>
             <div class="chart-item">
               <div class="chart-item-label"><span>แคลอรี่ (kcal)</span></div>
@@ -539,8 +566,8 @@
 
   <div class="edit-overlay" id="adjOverlay">
     <div class="edit-sheet">
-      <h3>ชดเชยพลังงานวันนี้</h3>
-      <p class="sheet-desc">ปรับตามวัน — ไม่ใช่การตั้งค่าถาวร เช่น +5% ถ้า BMR น้อยไป</p>
+      <h3>ชดเชยพลังงาน</h3>
+      <p class="sheet-desc">จำค่าล่าสุดเสมอจนกว่าจะเปลี่ยนใหม่ — เช่น +5% ถ้า BMR น้อยไป</p>
       <div class="field">
         <label for="adjInput">% ของ BMR</label>
         <input type="number" id="adjInput" step="1" min="-30" max="30" placeholder="0">
@@ -584,8 +611,9 @@
       cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้ — ยังไม่กิน = 0'], ['เป้าหมาย', 'กินเข้าไปเพื่อลดขาดแคล (Balance)']] },
       prot: { title: 'โปรตีน (คงเหลือ)', body: [['เริ่มวัน', 'ติดลบตามเป้า (ยังไม่กิน)'], ['สูตร', 'กินรวม − เป้า (น้ำหนัก × ตัวคูณ)'], ['ติดลบ', 'ยังขาดอีก — ต้องกินเพิ่ม'], ['ติดบวก', 'ถึงหรือเกินเป้าแล้ว'], ['สีแดง', 'ยังขาดโปรตีน']] },
       balance: { title: 'Balance (Deficit)', body: [['เริ่มวัน', 'ติดลบตาม Bsum (ยังไม่กิน)'], ['สูตร', 'Balance = แคลอรี่กิน − Bsum'], ['Bsum', 'BMR × (1 + ชดเชย%) + ออกกำลัง'], ['กินเข้า', 'Balance ค่อย ๆ ขึ้นใกล้ 0 หรือบวก'], ['ติดลบ (−)', 'ขาดแคล = ดีสำหรับลดน้ำหนัก']] },
-      adj: { title: 'ชดเชยพลังงาน', body: [['วันละ', 'ปรับได้แต่ละวัน — ไม่ใช่การตั้งค่าถาวร'], ['สูตร', 'ชดเชย kcal = BMR × % ÷ 100'], ['ตัวอย่าง', '+5% ถ้าสังเกตว่าขาดแคลมากไป'], ['ผล', 'เพิ่ม Bsum → Balance ติดลบน้อยลง']] },
-      loss: { title: 'Est. ลดน้ำหนัก', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal'], ['ติดลบ', 'ประมาณการลดน้ำหนักในวันนั้น'], ['แสดง', 'ในแถบ Bsum ใต้แดชบอร์ด']] },
+      adj: { title: 'ชดเชยพลังงาน', body: [['จำค่า', 'ใช้ค่าล่าสุดเสมอจนกว่าจะเปลี่ยนใหม่'], ['สูตร', 'ชดเชย kcal = BMR × % ÷ 100'], ['ตัวอย่าง', '+5% ถ้าสังเกตว่าขาดแคลมากไป'], ['ผล', 'เพิ่ม Bsum → Est. ลดน้ำหนักแม่นขึ้น']] },
+      loss: { title: 'Est. ลดน้ำหนัก (หัวใจแอป)', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['Balance', 'แคลอรี่กิน − (BMR + ชดเชย + ออกกำลัง)'], ['รวมเบิร์น', 'รวมการเผาพลังงานทั้งวัน → ส่งผลน้ำหนัก'], ['ติดลบ', 'ประมาณการลดน้ำหนักวันนั้น (ดี)'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal']] },
+      goal: { title: 'เป้าหมาย', body: [['ตั้งค่า', 'เป้าน้ำหนัก + เป้าเอว ในข้อมูลผู้ใช้'], ['กราฟ', 'เส้นประสีเขียว = เป้าหมาย'], ['แรงจูงใจ', 'เห็นความห่างจากเส้นเป้าทุกวัน'], ['แอปทั่วไป', 'MyFitnessPal, Lose It ใช้เส้นเป้า + progress bar คล้ายกัน']] },
     };
 
     let chartPeriodDays = 30;
@@ -616,8 +644,10 @@
       btnPrevDay: $('#btnPrevDay'), btnNextDay: $('#btnNextDay'),
       totalCal: $('#totalCal'), protRemain: $('#protRemain'), protCard: $('#protCard'), protSub: $('#protSub'),
       calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'), balSub: $('#balSub'),
-      adjCard: $('#adjCard'), adjPct: $('#adjPct'), adjSub: $('#adjSub'), bsumStrip: $('#bsumStrip'),
+      estCard: $('#estCard'), estVal: $('#estVal'), estSub: $('#estSub'),
+      bsumStrip: $('#bsumStrip'), adjLink: $('#adjLink'),
       profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
+      targetWeight: $('#targetWeight'), targetWaist: $('#targetWaist'), goalProgress: $('#goalProgress'),
       exerciseKcal: $('#exerciseKcal'), exerciseNote: $('#exerciseNote'), exerciseTime: $('#exerciseTime'),
       btnAddExercise: $('#btnAddExercise'), btnQuickExTemplate: $('#btnQuickExTemplate'),
       exerciseList: $('#exerciseList'), exerciseTemplateChips: $('#exerciseTemplateChips'),
@@ -626,7 +656,8 @@
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
       chartPeriodBtns: $('#chartPeriodBtns'),
-      chartWeight: $('#chartWeight'), chartCal: $('#chartCal'),
+      chartWeight: $('#chartWeight'), chartWaist: $('#chartWaist'), chartCal: $('#chartCal'),
+      chartWeightGoal: $('#chartWeightGoal'), chartWaistGoal: $('#chartWaistGoal'),
       chartProt: $('#chartProt'), chartBurn: $('#chartBurn'), chartBalance: $('#chartBalance'),
       editExerciseOverlay: $('#editExerciseOverlay'), editExerciseKcal: $('#editExerciseKcal'),
       editExerciseNote: $('#editExerciseNote'), editExerciseTime: $('#editExerciseTime'),
@@ -678,9 +709,10 @@
         proteinMultiplier: DEFAULT_PROTEIN_MULT, theme: 'dark',
         sectionOrder: [...DEFAULT_BLOCK_ORDER],
         chartPeriodDays: 30,
+        lastCompensationPct: 0,
         templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
         exerciseTemplates: DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
-        profile: { weight: '', age: '', waist: '', weightLog: {} },
+        profile: { weight: '', age: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
       };
     }
 
@@ -697,6 +729,7 @@
           theme: s.theme === 'light' ? 'light' : 'dark',
           sectionOrder: merged,
           chartPeriodDays: s.chartPeriodDays || 30,
+          lastCompensationPct: parseFloat(s.lastCompensationPct) || 0,
           templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
           exerciseTemplates: Array.isArray(s.exerciseTemplates) && s.exerciseTemplates.length
             ? s.exerciseTemplates : DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
@@ -704,7 +737,10 @@
             weight: s.profile?.weight ?? '',
             age: s.profile?.age ?? '',
             waist: s.profile?.waist ?? '',
+            targetWeight: s.profile?.targetWeight ?? '',
+            targetWaist: s.profile?.targetWaist ?? '',
             weightLog: s.profile?.weightLog && typeof s.profile.weightLog === 'object' ? s.profile.weightLog : {},
+            waistLog: s.profile?.waistLog && typeof s.profile.waistLog === 'object' ? s.profile.waistLog : {},
           },
         };
       } catch { return defaultSettings(); }
@@ -718,6 +754,11 @@
     }
 
     function getWeightLog() { return loadSettings().profile.weightLog || {}; }
+    function getWaistLog() { return loadSettings().profile.waistLog || {}; }
+
+    function getLastCompensationPct() {
+      return parseFloat(loadSettings().lastCompensationPct) || 0;
+    }
 
     function setWeightLogEntry(date, weight) {
       const log = { ...getWeightLog() };
@@ -729,12 +770,36 @@
       saveSettings({ profile });
     }
 
-    function getLatestWeightFromLog(log) {
+    function setWaistLogEntry(date, waist) {
+      const log = { ...getWaistLog() };
+      const w = parseFloat(waist);
+      if (isNaN(w) || w <= 0) delete log[date];
+      else log[date] = w;
+      const profile = { ...loadSettings().profile, waistLog: log };
+      const latest = getLatestFromLog(log);
+      if (latest) profile.waist = String(latest);
+      saveSettings({ profile });
+    }
+
+    function getLatestFromLog(log) {
       const dates = Object.keys(log).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
       const today = todayStr();
       const valid = dates.filter((d) => d <= today);
       if (!valid.length) return null;
       return parseFloat(log[valid[valid.length - 1]]);
+    }
+
+    function getLatestWeightFromLog(log) {
+      return getLatestFromLog(log);
+    }
+
+    function getWaistOnDate(date) {
+      const log = getWaistLog();
+      if (log[date]) return parseFloat(log[date]);
+      const sorted = Object.keys(log).filter((d) => d <= date).sort();
+      if (sorted.length) return parseFloat(log[sorted[sorted.length - 1]]);
+      const legacy = parseFloat(loadSettings().profile.waist);
+      return !isNaN(legacy) && legacy > 0 ? legacy : 0;
     }
 
     function getWeightOnDate(date) {
@@ -747,7 +812,7 @@
       return !isNaN(lw) && lw > 0 ? lw : 0;
     }
 
-    function defaultDayData() { return { meals: [], exercises: [], compensationPct: 0 }; }
+    function defaultDayData() { return { meals: [], exercises: [] }; }
 
     function migrateMeal(m) {
       return { id: m.id || crypto.randomUUID(), calories: m.calories, protein: m.protein, time: m.time || '12:00' };
@@ -782,7 +847,6 @@
       return {
         meals: Array.isArray(data.meals) ? data.meals.map(migrateMeal) : [],
         exercises,
-        compensationPct: parseFloat(data.compensationPct) || 0,
         _legacyWeight: data.weight ?? '',
       };
     }
@@ -799,19 +863,24 @@
       localStorage.setItem(storageKey(dateStr), JSON.stringify({
         meals: data.meals ?? [],
         exercises: (data.exercises ?? []).map(migrateExercise),
-        compensationPct: parseFloat(data.compensationPct) || 0,
       }));
     }
 
     function runMigration() {
       const settings = loadSettings();
       const log = { ...settings.profile.weightLog };
+      const waistLog = { ...settings.profile.waistLog };
       let changed = false;
+      let lastComp = settings.lastCompensationPct || 0;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key?.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
         const dateStr = key.slice(STORAGE_PREFIX.length);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+        try {
+          const raw = JSON.parse(localStorage.getItem(key));
+          if (raw && raw.compensationPct != null) lastComp = parseFloat(raw.compensationPct) || lastComp;
+        } catch { /* ignore */ }
         const day = loadDay(dateStr);
         if (day._legacyWeight && !log[dateStr]) {
           log[dateStr] = parseFloat(day._legacyWeight);
@@ -819,9 +888,22 @@
         }
         saveDay(dateStr, day);
       }
-      if (changed || !settings.profile.weight) {
+      const legacyWaist = parseFloat(settings.profile.waist);
+      if (!isNaN(legacyWaist) && legacyWaist > 0 && !Object.keys(waistLog).length) {
+        waistLog[todayStr()] = legacyWaist;
+        changed = true;
+      }
+      if (changed || !settings.profile.weight || lastComp !== settings.lastCompensationPct) {
         const latest = getLatestWeightFromLog(log);
-        saveSettings({ profile: { ...settings.profile, weightLog: log, weight: latest ? String(latest) : settings.profile.weight } });
+        saveSettings({
+          lastCompensationPct: lastComp,
+          profile: {
+            ...settings.profile,
+            weightLog: log,
+            waistLog,
+            weight: latest ? String(latest) : settings.profile.weight,
+          },
+        });
       }
     }
 
@@ -847,7 +929,7 @@
       const totalCal = data.meals.reduce((s, m) => s + m.calories, 0);
       const totalProt = data.meals.reduce((s, m) => s + m.protein, 0);
       const baseBMR = calcBMR(weight);
-      const compensationPct = parseFloat(data.compensationPct) || 0;
+      const compensationPct = getLastCompensationPct();
       const compensationKcal = baseBMR * (compensationPct / 100);
       const exercise = sumExerciseBurn(data.exercises);
       const bsum = baseBMR + compensationKcal + exercise;
@@ -956,12 +1038,22 @@
       els.balanceCard.classList.toggle('pos', st.balance > 0);
       els.balSub.textContent = st.balance < 0 ? 'ขาด ' + Math.abs(br) : st.balance > 0 ? 'เกิน ' + br : 'พอดี';
 
-      const pct = Math.round(st.compensationPct);
-      els.adjPct.textContent = (pct > 0 ? '+' : '') + pct + '%';
-      const ck = Math.round(st.compensationKcal);
-      els.adjSub.textContent = (ck > 0 ? '+' : '') + ck + ' kcal';
-
       const w = getWeightOnDate(currentDate);
+      const wl = Math.round(st.weightLoss * 1000) / 1000;
+      if (w > 0 || st.totalCal > 0 || st.bsum > 0) {
+        els.estVal.textContent = wl < 0 ? '↓' + Math.abs(wl) : wl > 0 ? '↑' + wl : '0';
+        els.estSub.textContent = wl < 0 ? 'กก. ลดวันนี้' : wl > 0 ? 'กก. เพิ่ม' : 'กก. คงที่';
+        els.estCard.classList.toggle('neg', wl < 0);
+      } else {
+        els.estVal.textContent = '—';
+        els.estSub.textContent = 'กก. วันนี้';
+        els.estCard.classList.remove('neg');
+      }
+
+      const pct = Math.round(st.compensationPct);
+      const ck = Math.round(st.compensationKcal);
+      const adjTxt = (pct > 0 ? '+' : '') + pct + '%' + (ck ? ' (' + (ck > 0 ? '+' : '') + ck + ')' : '');
+
       if (w > 0) {
         let parts = 'BMR <strong>' + Math.round(st.baseBMR) + '</strong>';
         if (st.compensationKcal) {
@@ -969,13 +1061,35 @@
         }
         if (st.exercise > 0) parts += ' + ออกกำลัง <strong>' + Math.round(st.exercise) + '</strong>';
         parts += ' = เผา <strong>' + Math.round(st.bsum) + '</strong> kcal';
-        const wl = Math.round(st.weightLoss * 1000) / 1000;
-        const wlTxt = wl < 0 ? '↓' + Math.abs(wl) : wl > 0 ? '↑' + wl : '0';
-        parts += ' · Est. <strong>' + wlTxt + '</strong> กก.';
+        parts += ' · ชดเชย <span class="adj-link" id="adjLinkInner">' + adjTxt + '</span>';
         els.bsumStrip.innerHTML = parts;
+        const inner = document.getElementById('adjLinkInner');
+        if (inner) inner.onclick = (e) => { e.stopPropagation(); openAdjEditor(); };
       } else {
-        els.bsumStrip.textContent = 'กรอกน้ำหนักเพื่อคำนวณ BMR';
+        els.bsumStrip.innerHTML = 'กรอกน้ำหนักเพื่อคำนวณ · ชดเชย <span class="adj-link">' + adjTxt + '</span>';
+        els.bsumStrip.querySelector('.adj-link').onclick = (e) => { e.stopPropagation(); openAdjEditor(); };
       }
+      els.adjLink.textContent = adjTxt;
+    }
+
+    function renderGoalProgress() {
+      const profile = loadSettings().profile;
+      const tw = parseFloat(profile.targetWeight);
+      const tWa = parseFloat(profile.targetWaist);
+      const cw = getWeightOnDate(currentDate);
+      const cWa = getWaistOnDate(currentDate);
+      const parts = [];
+      if (!isNaN(tw) && tw > 0 && cw > 0) {
+        const diff = Math.round((cw - tw) * 10) / 10;
+        parts.push(diff > 0 ? 'น้ำหนักเหลือ <strong>' + diff + '</strong> kg' : diff < 0 ? 'น้ำหนักถึงเป้าแล้ว ✓' : 'น้ำหนักถึงเป้า ✓');
+      }
+      if (!isNaN(tWa) && tWa > 0 && cWa > 0) {
+        const diff = Math.round((cWa - tWa) * 10) / 10;
+        parts.push(diff > 0 ? 'เอวเหลือ <strong>' + diff + '</strong> cm' : diff < 0 ? 'เอวถึงเป้าแล้ว ✓' : 'เอวถึงเป้า ✓');
+      }
+      els.goalProgress.innerHTML = parts.length
+        ? parts.join(' · ') + ' — เส้นเป้าบนกราฟ'
+        : 'ตั้งเป้าเพื่อดูความคืบหน้า — แสดงเส้นเป้าบนกราฟ';
     }
 
     function renderMeals(meals) {
@@ -1005,7 +1119,9 @@
           if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d <= endDate) dates.push(d);
         }
         const logDates = Object.keys(getWeightLog()).filter((d) => d <= endDate);
+        const waistDates = Object.keys(getWaistLog()).filter((d) => d <= endDate);
         logDates.forEach((d) => { if (!dates.includes(d)) dates.push(d); });
+        waistDates.forEach((d) => { if (!dates.includes(d)) dates.push(d); });
         dates.sort();
         if (!dates.length) return getDateRange(endDate, 30);
         const first = dates[0];
@@ -1030,8 +1146,22 @@
       const vals = points.map((p) => p.v);
       let min = Math.min(...vals), max = Math.max(...vals);
       if (opts.zeroLine) { min = Math.min(min, 0); max = Math.max(max, 0); }
+      if (opts.goal != null && !isNaN(opts.goal)) {
+        min = Math.min(min, opts.goal);
+        max = Math.max(max, opts.goal);
+      }
       const range = max - min || 1, pad = 5;
       const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+      if (opts.goal != null && !isNaN(opts.goal)) {
+        const gy = h - pad - ((opts.goal - min) / range) * (h - pad * 2);
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--success').trim();
+        ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(pad, gy); ctx.lineTo(w - pad, gy); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--success').trim();
+        ctx.font = '8px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText('เป้า ' + opts.goal, w - pad, gy - 2);
+      }
       if (opts.zeroLine && min < 0 && max > 0) {
         const zy = h - pad - ((0 - min) / range) * (h - pad * 2);
         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
@@ -1071,12 +1201,17 @@
     function renderCharts() {
       const end = currentDate <= todayStr() ? currentDate : todayStr();
       const dates = getChartDateRange(end, chartPeriodDays);
-      const wPts = [], calPts = [], protPts = [], burnPts = [], balPts = [];
+      const profile = loadSettings().profile;
+      const targetW = parseFloat(profile.targetWeight);
+      const targetWa = parseFloat(profile.targetWaist);
+      const wPts = [], waistPts = [], calPts = [], protPts = [], burnPts = [], balPts = [];
       dates.forEach((d) => {
         const w = getWeightOnDate(d);
+        const waist = getWaistOnDate(d);
         const data = loadDay(d);
         const st = calculate(data, w);
         if (w > 0) wPts.push({ v: w });
+        if (waist > 0) waistPts.push({ v: waist });
         if (data.meals.length) {
           calPts.push({ v: st.totalCal });
           protPts.push({ v: st.totalProt });
@@ -1084,7 +1219,12 @@
         if (st.exercise > 0) burnPts.push({ v: st.exercise });
         if (w > 0 || dayHasActivity(data)) balPts.push({ v: st.balance });
       });
-      drawLineChart(els.chartWeight, wPts, '--accent');
+      const wGoal = !isNaN(targetW) && targetW > 0 ? targetW : null;
+      const waGoal = !isNaN(targetWa) && targetWa > 0 ? targetWa : null;
+      els.chartWeightGoal.textContent = wGoal ? 'เป้า ' + targetW : '';
+      els.chartWaistGoal.textContent = waGoal ? 'เป้า ' + targetWa : '';
+      drawLineChart(els.chartWeight, wPts, '--accent', { goal: wGoal });
+      drawLineChart(els.chartWaist, waistPts, '--protein', { goal: waGoal });
       drawLineChart(els.chartCal, calPts, '--warning');
       drawLineChart(els.chartProt, protPts, '--protein');
       drawLineChart(els.chartBurn, burnPts, '--success');
@@ -1305,14 +1445,18 @@
     function refresh() {
       const profile = loadSettings().profile;
       const dayWeight = getWeightOnDate(currentDate);
+      const dayWaist = getWaistOnDate(currentDate);
       els.profileWeight.value = dayWeight > 0 ? dayWeight : profile.weight;
       els.profileAge.value = profile.age;
-      els.profileWaist.value = profile.waist;
+      els.profileWaist.value = dayWaist > 0 ? dayWaist : profile.waist;
+      els.targetWeight.value = profile.targetWeight || '';
+      els.targetWaist.value = profile.targetWaist || '';
       const data = loadDay(currentDate);
       const w = getWeightOnDate(currentDate);
       renderMeals(data.meals);
       renderExercises(data.exercises);
       renderDashboard(calculate(data, w));
+      renderGoalProgress();
       renderPeriodSummary();
       renderTemplates();
       renderExerciseTemplates();
@@ -1445,8 +1589,7 @@
     }
 
     function openAdjEditor() {
-      const data = loadDay(currentDate);
-      els.adjInput.value = data.compensationPct || 0;
+      els.adjInput.value = getLastCompensationPct();
       updateAdjPreview();
       els.adjOverlay.classList.add('open');
       els.adjInput.focus();
@@ -1464,9 +1607,7 @@
     function saveAdj() {
       const pct = parseFloat(els.adjInput.value);
       if (isNaN(pct) || pct < -30 || pct > 30) { showToast('ใช้ % ระหว่าง −30 ถึง +30', 'error'); return; }
-      const data = loadDay(currentDate);
-      data.compensationPct = pct;
-      saveDay(currentDate, data);
+      saveSettings({ lastCompensationPct: pct });
       els.adjOverlay.classList.remove('open');
       refresh();
     }
@@ -1544,11 +1685,28 @@
       setWeightLogEntry(currentDate, w);
       refresh();
     };
-    ['profileAge', 'profileWaist'].forEach((id) => {
+    els.profileWaist.oninput = () => {
+      setWaistLogEntry(currentDate, els.profileWaist.value);
+      refresh();
+    };
+    ['profileAge'].forEach((id) => {
       document.getElementById(id).oninput = () => {
-        saveSettings({ profile: { ...loadSettings().profile, age: els.profileAge.value, waist: els.profileWaist.value } });
+        saveSettings({ profile: { ...loadSettings().profile, age: els.profileAge.value } });
       };
     });
+    function saveGoals() {
+      saveSettings({
+        profile: {
+          ...loadSettings().profile,
+          targetWeight: els.targetWeight.value,
+          targetWaist: els.targetWaist.value,
+        },
+      });
+      renderGoalProgress();
+      renderCharts();
+    }
+    els.targetWeight.onchange = saveGoals;
+    els.targetWaist.onchange = saveGoals;
 
     els.btnAddMeal.onclick = handleAddMeal;
     els.btnAddExercise.onclick = handleAddExercise;
@@ -1573,7 +1731,8 @@
     els.btnCancelQuickExTpl.onclick = () => els.quickExTemplateOverlay.classList.remove('open');
     els.btnSaveQuickExTpl.onclick = saveQuickExerciseTemplate;
     els.quickExTemplateOverlay.onclick = (e) => { if (e.target === els.quickExTemplateOverlay) els.quickExTemplateOverlay.classList.remove('open'); };
-    els.adjCard.onclick = (e) => { if (!e.target.closest('.info-btn')) openAdjEditor(); };
+    els.adjLink.onclick = (e) => { e.stopPropagation(); openAdjEditor(); };
+    els.bsumStrip.onclick = (e) => { if (e.target.classList.contains('adj-link')) openAdjEditor(); };
     els.adjInput.oninput = updateAdjPreview;
     els.btnCancelAdj.onclick = () => els.adjOverlay.classList.remove('open');
     els.btnSaveAdj.onclick = saveAdj;
