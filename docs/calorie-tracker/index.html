@@ -260,6 +260,23 @@
       border-radius: 6px; color: var(--text); padding: 0.35rem 0.25rem; font-size: 16px; text-align: right;
     }
 
+    .ex-history-wrap { max-height: 52dvh; overflow-y: auto; margin-top: 0.35rem; }
+    .ex-history-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+    .ex-history-table thead th {
+      position: sticky; top: 0; background: var(--surface); z-index: 1;
+      text-align: left; font-weight: 600; color: var(--muted); font-size: 0.62rem;
+      padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--surface-2);
+    }
+    .ex-history-table thead th:last-child { text-align: right; }
+    .ex-history-row { cursor: pointer; }
+    .ex-history-row:active { background: var(--bg); }
+    .ex-history-row td {
+      padding: 0.45rem 0.25rem; border-bottom: 1px solid var(--surface-2); vertical-align: top;
+    }
+    .ex-history-row .ex-date { white-space: nowrap; width: 30%; color: var(--muted); font-size: 0.68rem; }
+    .ex-history-row .ex-items { line-height: 1.35; }
+    .ex-history-row .ex-kcal { text-align: right; white-space: nowrap; color: var(--success); font-weight: 600; }
+
     .bmr-note {
       font-size: 0.68rem; color: var(--muted); margin-top: 0.35rem;
       padding: 0.4rem 0.5rem; background: var(--bg); border-radius: 8px;
@@ -398,6 +415,7 @@
             <button type="button" class="btn" id="btnAddExercise" style="width:30px;padding:0;background:var(--success);color:#0f172a">+</button>
           </div>
           <p class="hint">แคลอรี่เผา · ☆=เทมเพลต · แตะรายการเพื่อแก้ไข</p>
+          <button type="button" class="btn btn-ghost" id="btnExerciseHistory" style="width:100%;font-size:0.75rem;margin-bottom:0.35rem">📋 ประวัติโปรแกรม</button>
           <ul class="meal-list" id="exerciseList"></ul>
           <p class="empty-meals" id="emptyExercises">ยังไม่มี — วันไม่ออกกำลังกายก็ได้</p>
         </section>
@@ -535,6 +553,29 @@
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCloseWeightHistory">ปิด</button>
         <button type="button" class="btn" id="btnSaveWeightHistory">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="exerciseHistoryOverlay">
+    <div class="edit-sheet">
+      <h3>ประวัติออกกำลังกาย</h3>
+      <p class="sheet-desc">แตะแถวเพื่อไปวันนั้น · รายการจากโน้ตที่บันทึก</p>
+      <div class="chart-period-btns" id="exHistoryPeriodBtns">
+        <button type="button" class="period-pill active" data-days="7">7D</button>
+        <button type="button" class="period-pill" data-days="30">30D</button>
+      </div>
+      <div class="ex-history-wrap">
+        <table class="ex-history-table" id="exHistoryTable">
+          <thead>
+            <tr><th>วันที่</th><th>รายการ</th><th>kcal</th></tr>
+          </thead>
+          <tbody id="exHistoryBody"></tbody>
+        </table>
+        <p class="empty-meals" id="exHistoryEmpty" style="display:none">ยังไม่มีประวัติในช่วงนี้</p>
+      </div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnCloseExHistory" style="flex:1">ปิด</button>
       </div>
     </div>
   </div>
@@ -678,6 +719,7 @@
     let editingExerciseId = null;
     let dragState = null;
     let pendingTplConfirm = null;
+    let exHistoryPeriodDays = 7;
 
     const $ = (s) => document.querySelector(s);
 
@@ -697,6 +739,10 @@
       btnAddExercise: $('#btnAddExercise'), btnQuickExTemplate: $('#btnQuickExTemplate'),
       exerciseList: $('#exerciseList'), exerciseTemplateChips: $('#exerciseTemplateChips'),
       exerciseCount: $('#exerciseCount'), emptyExercises: $('#emptyExercises'),
+      btnExerciseHistory: $('#btnExerciseHistory'),
+      exerciseHistoryOverlay: $('#exerciseHistoryOverlay'), exHistoryPeriodBtns: $('#exHistoryPeriodBtns'),
+      exHistoryTable: $('#exHistoryTable'), exHistoryBody: $('#exHistoryBody'), exHistoryEmpty: $('#exHistoryEmpty'),
+      btnCloseExHistory: $('#btnCloseExHistory'),
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
@@ -1383,6 +1429,67 @@
           + '<button type="button" class="btn btn-danger btn-icon" data-action="delete-ex" data-id="' + ex.id + '">✕</button></div>';
         els.exerciseList.appendChild(li);
       });
+    }
+
+    function formatExerciseDayItems(exercises) {
+      return [...exercises]
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+        .map((ex) => {
+          const note = (ex.note || '').trim();
+          return note || Math.round(ex.calories) + ' kcal';
+        })
+        .join(', ');
+    }
+
+    function collectExerciseHistory(days) {
+      const end = currentDate <= todayStr() ? currentDate : todayStr();
+      const rows = [];
+      getDateRange(end, days).forEach((date) => {
+        const exercises = loadDay(date).exercises || [];
+        if (!exercises.length) return;
+        rows.push({
+          date,
+          items: formatExerciseDayItems(exercises),
+          totalKcal: sumExerciseBurn(exercises),
+        });
+      });
+      return rows.reverse();
+    }
+
+    function renderExerciseHistory() {
+      const rows = collectExerciseHistory(exHistoryPeriodDays);
+      els.exHistoryBody.innerHTML = '';
+      const hasRows = rows.length > 0;
+      els.exHistoryTable.style.display = hasRows ? '' : 'none';
+      els.exHistoryEmpty.style.display = hasRows ? 'none' : 'block';
+      rows.forEach((row) => {
+        const tr = document.createElement('tr');
+        tr.className = 'ex-history-row';
+        tr.dataset.date = row.date;
+        const tdDate = document.createElement('td');
+        tdDate.className = 'ex-date';
+        tdDate.textContent = formatDateLabel(row.date);
+        const tdItems = document.createElement('td');
+        tdItems.className = 'ex-items';
+        tdItems.textContent = row.items;
+        const tdKcal = document.createElement('td');
+        tdKcal.className = 'ex-kcal';
+        tdKcal.textContent = String(Math.round(row.totalKcal));
+        tr.append(tdDate, tdItems, tdKcal);
+        els.exHistoryBody.appendChild(tr);
+      });
+    }
+
+    function openExerciseHistory() {
+      els.exHistoryPeriodBtns.querySelectorAll('.period-pill').forEach((btn) => {
+        btn.classList.toggle('active', parseInt(btn.dataset.days, 10) === exHistoryPeriodDays);
+      });
+      renderExerciseHistory();
+      els.exerciseHistoryOverlay.classList.add('open');
+    }
+
+    function closeExerciseHistory() {
+      els.exerciseHistoryOverlay.classList.remove('open');
     }
 
     function renderCharts() {
@@ -2164,6 +2271,23 @@
       if (del) { del.closest('.weight-log-item').dataset.deleted = '1'; del.closest('.weight-log-item').style.opacity = '0.35'; }
     };
     els.weightHistoryOverlay.onclick = (e) => { if (e.target === els.weightHistoryOverlay) els.weightHistoryOverlay.classList.remove('open'); };
+
+    els.btnExerciseHistory.onclick = openExerciseHistory;
+    els.btnCloseExHistory.onclick = closeExerciseHistory;
+    els.exerciseHistoryOverlay.onclick = (e) => { if (e.target === els.exerciseHistoryOverlay) closeExerciseHistory(); };
+    els.exHistoryPeriodBtns.onclick = (e) => {
+      const btn = e.target.closest('.period-pill');
+      if (!btn) return;
+      exHistoryPeriodDays = parseInt(btn.dataset.days, 10);
+      els.exHistoryPeriodBtns.querySelectorAll('.period-pill').forEach((b) => b.classList.toggle('active', b === btn));
+      renderExerciseHistory();
+    };
+    els.exHistoryBody.onclick = (e) => {
+      const row = e.target.closest('.ex-history-row');
+      if (!row?.dataset.date) return;
+      closeExerciseHistory();
+      setDate(row.dataset.date);
+    };
 
     els.btnSettings.onclick = openSettings;
     els.btnCancelSettings.onclick = closeSettings;
