@@ -603,6 +603,8 @@
   <script>
     const STORAGE_PREFIX = 'calorieTracker:';
     const SETTINGS_KEY = 'calorieTracker:settings';
+    const TEMPLATES_KEY = 'calorieTracker:templates';
+    const EXERCISE_TEMPLATES_KEY = 'calorieTracker:exerciseTemplates';
     const MAX_MEALS = 7;
     const MAX_EXERCISES = 5;
     const BMR_MULTIPLIER = 22;
@@ -722,6 +724,58 @@
     function formatTimeDisplay(t) { if (!t) return ''; const [h, m] = t.split(':'); return parseInt(h, 10) + ':' + m; }
     function storageKey(d) { return STORAGE_PREFIX + d; }
 
+    function loadRawSettings() {
+      try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); }
+      catch { return {}; }
+    }
+
+    function loadTemplateList() {
+      try {
+        const raw = localStorage.getItem(TEMPLATES_KEY);
+        if (raw !== null) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) return arr.map((t) => ({ ...t }));
+        }
+      } catch { /* fall through */ }
+      const s = loadRawSettings();
+      if (Array.isArray(s.templates)) {
+        const migrated = s.templates.map((t) => ({ ...t }));
+        saveTemplateList(migrated);
+        return migrated;
+      }
+      return DEFAULT_TEMPLATES.map((t) => ({ ...t }));
+    }
+
+    function loadExerciseTemplateList() {
+      try {
+        const raw = localStorage.getItem(EXERCISE_TEMPLATES_KEY);
+        if (raw !== null) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) return arr.map((t) => ({ ...t }));
+        }
+      } catch { /* fall through */ }
+      const s = loadRawSettings();
+      if (Array.isArray(s.exerciseTemplates)) {
+        const migrated = s.exerciseTemplates.map((t) => ({ ...t }));
+        saveExerciseTemplateList(migrated);
+        return migrated;
+      }
+      return DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t }));
+    }
+
+    function saveTemplateList(templates) {
+      localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates.map((t) => ({ ...t }))));
+    }
+
+    function saveExerciseTemplateList(templates) {
+      localStorage.setItem(EXERCISE_TEMPLATES_KEY, JSON.stringify(templates.map((t) => ({ ...t }))));
+    }
+
+    function migrateTemplateStores() {
+      loadTemplateList();
+      loadExerciseTemplateList();
+    }
+
     function defaultSettings() {
       return {
         proteinMultiplier: DEFAULT_PROTEIN_MULT, theme: 'dark',
@@ -729,8 +783,8 @@
         chartPeriodDays: 30,
         lastCompensationPct: 0,
         programStartDate: '',
-        templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
-        exerciseTemplates: DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
+        templates: loadTemplateList(),
+        exerciseTemplates: loadExerciseTemplateList(),
         profile: { weight: '', age: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
       };
     }
@@ -750,9 +804,8 @@
           chartPeriodDays: s.chartPeriodDays || 30,
           lastCompensationPct: parseFloat(s.lastCompensationPct) || 0,
           programStartDate: s.programStartDate || '',
-          templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
-          exerciseTemplates: Array.isArray(s.exerciseTemplates) && s.exerciseTemplates.length
-            ? s.exerciseTemplates : DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
+          templates: loadTemplateList(),
+          exerciseTemplates: loadExerciseTemplateList(),
           profile: {
             weight: s.profile?.weight ?? '',
             age: s.profile?.age ?? '',
@@ -767,16 +820,18 @@
     }
 
     function saveSettings(partial) {
+      if ('templates' in partial) saveTemplateList(partial.templates);
+      if ('exerciseTemplates' in partial) saveExerciseTemplateList(partial.exerciseTemplates);
       const cur = loadSettings();
       const next = { ...cur, ...partial };
       if (partial.profile) next.profile = { ...cur.profile, ...partial.profile };
+      next.templates = loadTemplateList();
+      next.exerciseTemplates = loadExerciseTemplateList();
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       scheduleAutoBackup();
     }
 
     function getWeightLog() { return loadSettings().profile.weightLog || {}; }
-    function getWaistLog() { return loadSettings().profile.waistLog || {}; }
-
     function getWaistLog() { return loadSettings().profile.waistLog || {}; }
 
     function inferProgramStartDate() {
@@ -971,6 +1026,7 @@
           },
         });
       }
+      migrateTemplateStores();
     }
 
     function getFormData() {
@@ -1428,7 +1484,7 @@
       const name = els.quickTemplateName.value.trim();
       if (!p) { showToast('ใช้ Cal,Protein เช่น 450,30', 'error'); return; }
       if (!name) { showToast('ใส่ชื่อเทมเพลต', 'error'); return; }
-      const templates = loadSettings().templates;
+      const templates = loadTemplateList();
       templates.push({ id: 't' + Date.now(), label: name, calories: p.calories, protein: p.protein });
       saveSettings({ templates });
       els.quickTemplateOverlay.classList.remove('open');
@@ -1446,7 +1502,7 @@
 
     function renderTemplates() {
       els.templateChips.innerHTML = '';
-      loadSettings().templates.forEach((t) => {
+      loadTemplateList().forEach((t) => {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
         b.onclick = () => { els.mealInput.value = t.calories + ',' + t.protein; els.mealInput.focus(); };
@@ -1456,7 +1512,7 @@
 
     function renderExerciseTemplates() {
       els.exerciseTemplateChips.innerHTML = '';
-      loadSettings().exerciseTemplates.forEach((t) => {
+      loadExerciseTemplateList().forEach((t) => {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
         b.onclick = () => {
@@ -1470,11 +1526,11 @@
 
     function renderTemplateEditor() {
       els.templateEditor.innerHTML = '';
-      loadSettings().templates.forEach((t, i) => {
+      loadTemplateList().forEach((t, i) => {
         const row = document.createElement('div');
         row.className = 'field-row'; row.style.marginBottom = '0.4rem';
-        row.innerHTML = '<input data-tpl="label" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
-          + '<input data-tpl="val" data-i="' + i + '" value="' + t.calories + ',' + t.protein + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
+        row.innerHTML = '<input data-tpl="label" data-tpl-id="' + t.id + '" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-tpl="val" data-tpl-id="' + t.id + '" data-i="' + i + '" value="' + t.calories + ',' + t.protein + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
         els.templateEditor.appendChild(row);
       });
     }
@@ -1485,19 +1541,25 @@
         const i = el.dataset.i;
         const val = els.templateEditor.querySelector('[data-tpl="val"][data-i="' + i + '"]');
         const p = parseMealInput(val?.value || '');
-        if (p && el.value.trim()) templates.push({ id: 't' + Date.now() + i, label: el.value.trim(), ...p });
+        if (!p || !el.value.trim()) return;
+        templates.push({
+          id: el.dataset.tplId || ('t' + Date.now() + i),
+          label: el.value.trim(),
+          calories: p.calories,
+          protein: p.protein,
+        });
       });
       return templates;
     }
 
     function renderExerciseTemplateEditor() {
       els.exerciseTemplateEditor.innerHTML = '';
-      loadSettings().exerciseTemplates.forEach((t, i) => {
+      loadExerciseTemplateList().forEach((t, i) => {
         const row = document.createElement('div');
         row.className = 'field-row-3'; row.style.marginBottom = '0.4rem';
-        row.innerHTML = '<input data-extpl="label" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
-          + '<input data-extpl="kcal" data-i="' + i + '" value="' + t.calories + '" inputmode="numeric" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
-          + '<input data-extpl="note" data-i="' + i + '" value="' + String(t.note || '').replace(/"/g, '&quot;') + '" placeholder="โน้ต" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
+        row.innerHTML = '<input data-extpl="label" data-extpl-id="' + t.id + '" data-i="' + i + '" value="' + String(t.label).replace(/"/g, '&quot;') + '" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-extpl="kcal" data-extpl-id="' + t.id + '" data-i="' + i + '" value="' + t.calories + '" inputmode="numeric" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">'
+          + '<input data-extpl="note" data-extpl-id="' + t.id + '" data-i="' + i + '" value="' + String(t.note || '').replace(/"/g, '&quot;') + '" placeholder="โน้ต" style="font-size:14px;padding:0.35rem;background:var(--bg);border:1px solid var(--surface-2);border-radius:6px;color:var(--text)">';
         els.exerciseTemplateEditor.appendChild(row);
       });
     }
@@ -1511,7 +1573,7 @@
         const kcal = parseFloat(kcalEl?.value);
         if (!el.value.trim() || isNaN(kcal) || kcal <= 0) return;
         templates.push({
-          id: 'e' + Date.now() + i,
+          id: el.dataset.extplId || ('e' + Date.now() + i),
           label: el.value.trim(),
           calories: kcal,
           note: noteEl?.value.trim() || el.value.trim(),
@@ -1713,7 +1775,7 @@
       const name = els.quickExTemplateName.value.trim();
       if (isNaN(kcal) || kcal <= 0) { showToast('ใส่ kcal', 'error'); return; }
       if (!name) { showToast('ใส่ชื่อเทมเพลต', 'error'); return; }
-      const templates = loadSettings().exerciseTemplates;
+      const templates = loadExerciseTemplateList();
       templates.push({
         id: 'e' + Date.now(),
         label: name,
@@ -1760,13 +1822,26 @@
     function saveAllSettings() {
       const mult = parseFloat(els.proteinMultiplier.value);
       if (isNaN(mult) || mult < 0.5 || mult > 3) { showToast('ตัวคูณ 0.5–3.0', 'error'); return; }
-      const tpl = readTemplateEditor();
-      const exTpl = readExerciseTemplateEditor();
-      saveSettings({
-        proteinMultiplier: mult,
-        templates: tpl.length ? tpl : loadSettings().templates,
-        exerciseTemplates: exTpl.length ? exTpl : loadSettings().exerciseTemplates,
-      });
+      const partial = { proteinMultiplier: mult };
+      const mealRows = els.templateEditor.querySelectorAll('[data-tpl="label"]').length;
+      const exRows = els.exerciseTemplateEditor.querySelectorAll('[data-extpl="label"]').length;
+      if (mealRows > 0) {
+        const tpl = readTemplateEditor();
+        if (tpl.length !== mealRows) {
+          showToast('เทมเพลตมื้อรูปแบบไม่ถูกต้อง — ใช้ Cal,Protein', 'error');
+          return;
+        }
+        partial.templates = tpl;
+      }
+      if (exRows > 0) {
+        const exTpl = readExerciseTemplateEditor();
+        if (exTpl.length !== exRows) {
+          showToast('เทมเพลตออกกำลังไม่ครบ — ใส่ชื่อและ kcal', 'error');
+          return;
+        }
+        partial.exerciseTemplates = exTpl;
+      }
+      saveSettings(partial);
       closeSettings(); refresh();
     }
 
@@ -1778,7 +1853,7 @@
     }
 
     function buildExportPayload() {
-      const payload = { version: 5, exportedAt: new Date().toISOString(), data: {} };
+      const payload = { version: 6, exportedAt: new Date().toISOString(), data: {} };
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k?.startsWith(STORAGE_PREFIX)) payload.data[k] = localStorage.getItem(k);
@@ -1897,6 +1972,7 @@
             if (k.startsWith(STORAGE_PREFIX)) { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); n++; }
           });
           runMigration(); applyBlockOrder(); refresh();
+          migrateTemplateStores();
           scheduleAutoBackup();
           showToast('Import ' + n + ' รายการ', 'success');
         } catch { showToast('ไฟล์ไม่ถูกต้อง', 'error'); }
@@ -2030,12 +2106,12 @@
     els.btnSaveSettings.onclick = saveAllSettings;
     els.settingsOverlay.onclick = (e) => { if (e.target === els.settingsOverlay) closeSettings(); };
     els.btnAddTemplate.onclick = () => {
-      const t = loadSettings().templates;
+      const t = loadTemplateList();
       t.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
       saveSettings({ templates: t }); renderTemplateEditor();
     };
     els.btnAddExTemplate.onclick = () => {
-      const t = loadSettings().exerciseTemplates;
+      const t = loadExerciseTemplateList();
       t.push({ id: 'e' + Date.now(), label: 'ออกกำลังใหม่', calories: 200, note: '' });
       saveSettings({ exerciseTemplates: t }); renderExerciseTemplateEditor();
     };
