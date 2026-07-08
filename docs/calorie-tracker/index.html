@@ -235,11 +235,25 @@
     .meal-list { list-style: none; }
     .meal-item {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 0.35rem; padding: 0.45rem 0; border-bottom: 1px solid var(--surface-2);
+      gap: 0.35rem; padding: 0.32rem 0; border-bottom: 1px solid var(--surface-2);
     }
     .meal-item:last-child { border-bottom: none; }
-    .meal-info .meal-nums { font-weight: 600; font-size: 0.85rem; }
-    .meal-info .meal-meta { font-size: 0.68rem; color: var(--muted); }
+    .meal-info {
+      flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.45rem;
+      font-size: 0.78rem; line-height: 1.2;
+    }
+    .meal-info .meal-time {
+      flex-shrink: 0; width: 2.35rem; font-size: 0.68rem; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .meal-info .meal-nums {
+      flex: 1; min-width: 0; font-weight: 600; font-size: 0.78rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .meal-actions {
+      display: flex; flex-shrink: 0; align-items: center; gap: 0.15rem;
+    }
+    .meal-actions .btn-icon { width: 26px; height: 26px; font-size: 0.75rem; }
     .empty-meals { text-align: center; color: var(--muted); font-size: 0.75rem; padding: 0.4rem 0; }
     .hint { font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
 
@@ -461,7 +475,7 @@
             <button type="button" class="btn-tpl-save" id="btnQuickTemplate" title="บันทึกเป็นเทมเพลต">☆</button>
             <button type="button" class="btn" id="btnAddMeal" style="width:30px;padding:0">+</button>
           </div>
-          <p class="hint">450,30 · ☆=เทมเพลต · แตะมื้อเพื่อแก้ไข</p>
+          <p class="hint">450,30 · ☆=เทมเพลต · ✎ แก้ไข</p>
           <ul class="meal-list" id="mealList"></ul>
           <p class="empty-meals" id="emptyMeals">ยังไม่มีมื้อ</p>
         </section>
@@ -478,7 +492,7 @@
             <button type="button" class="btn-tpl-save" id="btnQuickExTemplate" title="บันทึกเป็นเทมเพลต">☆</button>
             <button type="button" class="btn" id="btnAddExercise" style="width:30px;padding:0;background:var(--success);color:#0f172a">+</button>
           </div>
-          <p class="hint">แคลอรี่เผา · ☆=เทมเพลต · แตะรายการเพื่อแก้ไข</p>
+          <p class="hint">แคลอรี่เผา · ☆=เทมเพลต · ✎ แก้ไข</p>
           <button type="button" class="btn btn-ghost" id="btnExerciseHistory" style="width:100%;font-size:0.75rem;margin-bottom:0.35rem">📋 ประวัติโปรแกรม</button>
           <ul class="meal-list" id="exerciseList"></ul>
           <p class="empty-meals" id="emptyExercises">ยังไม่มี — วันไม่ออกกำลังกายก็ได้</p>
@@ -1448,8 +1462,9 @@
         const li = document.createElement('li');
         li.className = 'meal-item';
         li.dataset.id = m.id;
-        li.innerHTML = '<div class="meal-info" data-action="edit" data-id="' + m.id + '"><div class="meal-nums">' + Math.round(m.calories) + ' · ' + m.protein + 'g</div>'
-          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(m.time) + ' · แตะเพื่อแก้ไข</div></div>'
+        li.innerHTML = '<div class="meal-info" data-action="edit" data-id="' + m.id + '">'
+          + '<span class="meal-time">' + formatTimeDisplay(m.time) + '</span>'
+          + '<span class="meal-nums">' + Math.round(m.calories) + ' · ' + m.protein + 'g</span></div>'
           + '<div class="meal-actions"><button type="button" class="btn btn-ghost btn-icon" data-action="edit" data-id="' + m.id + '">✎</button>'
           + '<button type="button" class="btn btn-danger btn-icon" data-action="delete" data-id="' + m.id + '">✕</button></div>';
         els.mealList.appendChild(li);
@@ -1538,8 +1553,9 @@
         li.className = 'meal-item';
         li.dataset.id = ex.id;
         const note = ex.note ? ' · ' + ex.note : '';
-        li.innerHTML = '<div class="meal-info" data-action="edit-ex" data-id="' + ex.id + '"><div class="meal-nums">' + Math.round(ex.calories) + ' kcal</div>'
-          + '<div class="meal-meta">🕐 ' + formatTimeDisplay(ex.time) + note + '</div></div>'
+        li.innerHTML = '<div class="meal-info" data-action="edit-ex" data-id="' + ex.id + '">'
+          + '<span class="meal-time">' + formatTimeDisplay(ex.time) + '</span>'
+          + '<span class="meal-nums">' + Math.round(ex.calories) + ' kcal' + note + '</span></div>'
           + '<div class="meal-actions"><button type="button" class="btn btn-ghost btn-icon" data-action="edit-ex" data-id="' + ex.id + '">✎</button>'
           + '<button type="button" class="btn btn-danger btn-icon" data-action="delete-ex" data-id="' + ex.id + '">✕</button></div>';
         els.exerciseList.appendChild(li);
