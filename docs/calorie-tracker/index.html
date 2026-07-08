@@ -282,6 +282,20 @@
     .edit-actions { display: flex; gap: 0.35rem; margin-top: 0.7rem; }
     .edit-actions .btn { flex: 1; }
 
+    .confirm-pop-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 60; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .confirm-pop-overlay.open { display: flex; }
+    .confirm-pop {
+      background: var(--surface); border-radius: var(--radius); padding: 0.85rem 1rem;
+      width: 100%; max-width: 280px; box-shadow: var(--shadow);
+    }
+    .confirm-pop-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .confirm-pop-body { font-size: 0.76rem; color: var(--muted); margin-bottom: 0.65rem; line-height: 1.4; }
+    .confirm-pop-actions { display: flex; gap: 0.35rem; }
+    .confirm-pop-actions .btn { flex: 1; padding: 0.45rem; font-size: 0.82rem; }
+
     .toast {
       position: fixed; bottom: calc(1rem + var(--safe-bottom)); left: 50%;
       transform: translateX(-50%) translateY(120%); padding: 0.55rem 1rem;
@@ -598,6 +612,17 @@
     </div>
   </div>
 
+  <div class="confirm-pop-overlay" id="tplConfirmOverlay">
+    <div class="confirm-pop" role="dialog" aria-modal="true">
+      <div class="confirm-pop-title" id="tplConfirmTitle">เพิ่มรายการ</div>
+      <div class="confirm-pop-body" id="tplConfirmBody"></div>
+      <div class="confirm-pop-actions">
+        <button type="button" class="btn btn-ghost" id="tplConfirmCancel">ยกเลิก</button>
+        <button type="button" class="btn" id="tplConfirmOk">ตกลง</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast error" id="toast"></div>
 
   <script>
@@ -652,6 +677,7 @@
     let editingMealId = null;
     let editingExerciseId = null;
     let dragState = null;
+    let pendingTplConfirm = null;
 
     const $ = (s) => document.querySelector(s);
 
@@ -706,6 +732,8 @@
       btnCancelAdj: $('#btnCancelAdj'), btnSaveAdj: $('#btnSaveAdj'),
       infoOverlay: $('#infoOverlay'), infoTitle: $('#infoTitle'), infoBody: $('#infoBody'),
       btnCloseInfo: $('#btnCloseInfo'),
+      tplConfirmOverlay: $('#tplConfirmOverlay'), tplConfirmTitle: $('#tplConfirmTitle'),
+      tplConfirmBody: $('#tplConfirmBody'), tplConfirmCancel: $('#tplConfirmCancel'), tplConfirmOk: $('#tplConfirmOk'),
       toast: $('#toast'),
     };
 
@@ -1500,12 +1528,36 @@
       els.infoOverlay.classList.add('open');
     }
 
+    function openTplConfirm(title, body, onOk) {
+      pendingTplConfirm = onOk;
+      els.tplConfirmTitle.textContent = title;
+      els.tplConfirmBody.textContent = body;
+      els.tplConfirmOverlay.classList.add('open');
+    }
+
+    function closeTplConfirm() {
+      pendingTplConfirm = null;
+      els.tplConfirmOverlay.classList.remove('open');
+    }
+
+    function confirmTplOk() {
+      const fn = pendingTplConfirm;
+      closeTplConfirm();
+      if (fn) fn();
+    }
+
     function renderTemplates() {
       els.templateChips.innerHTML = '';
       loadTemplateList().forEach((t) => {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
-        b.onclick = () => { els.mealInput.value = t.calories + ',' + t.protein; els.mealInput.focus(); };
+        b.onclick = () => {
+          openTplConfirm(
+            'เพิ่มมื้อ',
+            t.label + '\n' + t.calories + ' kcal · ' + t.protein + 'g โปรตีน',
+            () => addMeal(t.calories, t.protein, els.mealTime.value)
+          );
+        };
         els.templateChips.appendChild(b);
       });
     }
@@ -1515,10 +1567,13 @@
       loadExerciseTemplateList().forEach((t) => {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'chip'; b.textContent = t.label;
+        const note = t.note || t.label;
         b.onclick = () => {
-          els.exerciseKcal.value = t.calories;
-          els.exerciseNote.value = t.note || t.label;
-          els.exerciseKcal.focus();
+          openTplConfirm(
+            'เพิ่มออกกำลังกาย',
+            t.label + '\n' + t.calories + ' kcal' + (note ? ' · ' + note : ''),
+            () => addExercise(t.calories, note, els.exerciseTime.value)
+          );
         };
         els.exerciseTemplateChips.appendChild(b);
       });
@@ -1716,21 +1771,27 @@
       saveDay(currentDate, data); closeEdit(); refresh();
     }
 
-    function handleAddExercise() {
-      const kcal = parseFloat(els.exerciseKcal.value);
-      if (isNaN(kcal) || kcal <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
+    function addExercise(kcal, note, time) {
+      const k = parseFloat(kcal);
+      if (isNaN(k) || k <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
       const data = loadDay(currentDate);
       if (data.exercises.length >= MAX_EXERCISES) { showToast('สูงสุด ' + MAX_EXERCISES + ' รายการ', 'error'); return; }
       data.exercises.push({
         id: crypto.randomUUID(),
-        calories: kcal,
-        note: els.exerciseNote.value.trim(),
-        time: els.exerciseTime.value || nowTimeStr(),
+        calories: k,
+        note: (note || '').trim(),
+        time: time || nowTimeStr(),
       });
       touchProgramStart(currentDate);
       saveDay(currentDate, data);
       els.exerciseKcal.value = ''; els.exerciseNote.value = ''; els.exerciseTime.value = nowTimeStr();
       refresh();
+    }
+
+    function handleAddExercise() {
+      const kcal = parseFloat(els.exerciseKcal.value);
+      if (isNaN(kcal) || kcal <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
+      addExercise(kcal, els.exerciseNote.value.trim(), els.exerciseTime.value);
     }
 
     function deleteExercise(id) {
@@ -2051,6 +2112,9 @@
     els.editExerciseOverlay.onclick = (e) => { if (e.target === els.editExerciseOverlay) closeEditExercise(); };
     els.btnQuickTemplate.onclick = openQuickTemplate;
     els.btnQuickExTemplate.onclick = openQuickExerciseTemplate;
+    els.tplConfirmCancel.onclick = closeTplConfirm;
+    els.tplConfirmOk.onclick = confirmTplOk;
+    els.tplConfirmOverlay.onclick = (e) => { if (e.target === els.tplConfirmOverlay) closeTplConfirm(); };
     els.btnCancelQuickTpl.onclick = () => els.quickTemplateOverlay.classList.remove('open');
     els.btnSaveQuickTpl.onclick = saveQuickTemplate;
     els.quickTemplateOverlay.onclick = (e) => { if (e.target === els.quickTemplateOverlay) els.quickTemplateOverlay.classList.remove('open'); };
