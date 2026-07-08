@@ -908,13 +908,19 @@
       toast: $('#toast'),
     };
 
-    function todayStr() { return new Date().toISOString().slice(0, 10); }
+    function localDateStr(d) {
+      const dt = d instanceof Date ? d : new Date(d + 'T12:00:00');
+      return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+    }
+    function todayStr() { return localDateStr(new Date()); }
     function nowTimeStr() {
       const n = new Date();
       return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
     }
     function shiftDate(d, n) {
-      const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10);
+      const x = new Date(d + 'T12:00:00');
+      x.setDate(x.getDate() + n);
+      return localDateStr(x);
     }
     function formatDateLabel(d) {
       if (d === todayStr()) return 'วันนี้';
@@ -2052,6 +2058,11 @@
     }
 
     function refresh() {
+      const today = todayStr();
+      if (els.dateLabel.textContent === 'วันนี้' && currentDate !== today) {
+        setDate(today);
+        return;
+      }
       const profile = loadSettings().profile;
       const weightLog = getWeightLog();
       const waistLog = getWaistLog();
@@ -2588,6 +2599,12 @@
     $('#toggleData').onclick = () => $('#dataSection').classList.toggle('collapsed');
 
     window.addEventListener('resize', renderCharts);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      const today = todayStr();
+      if (currentDate === today) refresh();
+      else if (els.dateLabel.textContent === 'วันนี้') setDate(today);
+    });
 
     runMigration();
     applyTheme(loadSettings().theme);
