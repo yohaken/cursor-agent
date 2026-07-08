@@ -54,6 +54,68 @@
     }
     .drag-handle:active { cursor: grabbing; opacity: 1; }
 
+    .block-style-btn {
+      position: absolute; top: 0.45rem; left: 0.45rem;
+      background: var(--surface-2); border: none; color: var(--muted);
+      width: 26px; height: 26px; border-radius: 7px; font-size: 0.72rem;
+      cursor: pointer; z-index: 3; display: flex; align-items: center; justify-content: center;
+      opacity: 0.65;
+    }
+    .block-style-btn:active { opacity: 1; }
+
+    .sortable-block .period-summary,
+    .sortable-block .section,
+    .sortable-block .date-nav {
+      padding-left: 2rem;
+      background: var(--blk-bg, var(--surface));
+      color: var(--blk-text, var(--text));
+    }
+    .sortable-block .section-toggle { padding-left: 2rem; }
+    .sortable-block[data-block-id="stats"] .inline-stats { padding: 0.2rem 1.4rem 0 2rem; }
+    .sortable-block .mini-stat,
+    .sortable-block .bsum-strip {
+      background: var(--blk-bg, var(--surface));
+      color: var(--blk-text, var(--text));
+    }
+    .sortable-block .section-title,
+    .sortable-block .period-summary .section-title,
+    .sortable-block .date-display .label,
+    .sortable-block .mini-stat .lbl,
+    .sortable-block .hint { color: var(--blk-title, var(--muted)); }
+    .sortable-block .mini-stat .sub,
+    .sortable-block .bsum-strip { color: var(--blk-title, var(--muted)); }
+    .sortable-block[data-block-id="summary"] .period-card { background: var(--blk-bg-2, var(--bg)); }
+    .sortable-block[data-block-id="summary"] .period-card .period-label { color: var(--blk-accent, var(--accent)); }
+    .sortable-block[data-block-id="summary"] .period-stat .val.good { color: var(--blk-good, var(--success)); }
+    .sortable-block[data-block-id="summary"] .period-stat .val.bad { color: var(--blk-bad, var(--danger)); }
+    .sortable-block[data-block-id="summary"] .period-stat .val.burn { color: var(--blk-burn, var(--success)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.cal .val { color: var(--blk-cal, var(--warning)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.prot .val { color: var(--blk-prot, var(--protein)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.prot.bad .val { color: var(--blk-bad, var(--danger)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.bal.pos .val { color: var(--blk-bal-pos, var(--success)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.bal.neg .val { color: var(--blk-bal-neg, var(--danger)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.est .val { color: var(--blk-est, var(--success)); }
+    .sortable-block[data-block-id="stats"] .mini-stat.est.neg .val { color: var(--blk-good, var(--success)); }
+    .sortable-block[data-block-id="stats"] .bsum-strip strong,
+    .sortable-block[data-block-id="stats"] .adj-link { color: var(--blk-accent, var(--accent)); }
+    .sortable-block[data-block-id="meals"] .section.priority { border-color: var(--blk-accent, rgba(56,189,248,0.2)); }
+    .sortable-block[data-block-id="exercises"] .section.burn { border-color: var(--blk-accent, rgba(74,222,128,0.2)); }
+    .sortable-block .goal-progress { background: var(--blk-bg-2, var(--bg)); }
+    .sortable-block .goal-progress strong { color: var(--blk-accent, var(--accent)); }
+
+    .style-color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.5rem; }
+    .style-color-field {
+      display: flex; flex-direction: column; gap: 0.2rem;
+      background: var(--bg); border-radius: 8px; padding: 0.4rem;
+    }
+    .style-color-field label { font-size: 0.62rem; color: var(--muted); }
+    .style-color-field input[type="color"] {
+      width: 100%; height: 32px; border: none; background: transparent; padding: 0; cursor: pointer;
+    }
+    .style-color-field .btn-clear-style {
+      background: transparent; border: none; color: var(--muted); font-size: 0.6rem; cursor: pointer; text-align: left; padding: 0;
+    }
+
     .period-summary {
       background: var(--surface); border-radius: var(--radius);
       padding: 0.45rem 0.35rem 0.4rem; box-shadow: var(--shadow);
@@ -260,22 +322,39 @@
       border-radius: 6px; color: var(--text); padding: 0.35rem 0.25rem; font-size: 16px; text-align: right;
     }
 
-    .ex-history-wrap { max-height: 52dvh; overflow-y: auto; margin-top: 0.35rem; }
+    .ex-history-wrap { flex: 1; min-height: 0; overflow-y: auto; margin-top: 0.35rem; }
     .ex-history-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
     .ex-history-table thead th {
       position: sticky; top: 0; background: var(--surface); z-index: 1;
       text-align: left; font-weight: 600; color: var(--muted); font-size: 0.62rem;
       padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--surface-2);
     }
+    .ex-history-table thead th:nth-child(3),
     .ex-history-table thead th:last-child { text-align: right; }
-    .ex-history-row { cursor: pointer; }
-    .ex-history-row:active { background: var(--bg); }
     .ex-history-row td {
-      padding: 0.45rem 0.25rem; border-bottom: 1px solid var(--surface-2); vertical-align: top;
+      padding: 0.35rem 0.2rem; border-bottom: 1px solid var(--surface-2); vertical-align: middle;
     }
-    .ex-history-row .ex-date { white-space: nowrap; width: 30%; color: var(--muted); font-size: 0.68rem; }
-    .ex-history-row .ex-items { line-height: 1.35; }
-    .ex-history-row .ex-kcal { text-align: right; white-space: nowrap; color: var(--success); font-weight: 600; }
+    .ex-history-row .ex-date {
+      white-space: nowrap; width: 3.2rem; color: var(--muted); font-size: 0.68rem; font-variant-numeric: tabular-nums;
+    }
+    .ex-history-row .ex-date button {
+      background: none; border: none; color: var(--accent); font-size: 0.68rem; padding: 0; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
+    .ex-history-row input[type="text"],
+    .ex-history-row input[type="number"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--surface-2);
+      border-radius: 6px; color: var(--text); padding: 0.35rem 0.3rem; font-size: 16px;
+    }
+    .ex-history-row input[type="number"] { width: 3.5rem; text-align: right; }
+    .ex-history-row .ex-del { width: 28px; padding: 0; }
+
+    .edit-overlay.sheet-full { align-items: stretch; padding: 0; padding-bottom: var(--safe-bottom); }
+    .edit-overlay.sheet-full .edit-sheet {
+      max-width: none; max-height: none; height: 100%; border-radius: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .edit-overlay.sheet-full .edit-sheet .edit-actions { flex-shrink: 0; margin-top: auto; }
 
     .bmr-note {
       font-size: 0.68rem; color: var(--muted); margin-top: 0.35rem;
@@ -335,7 +414,7 @@
         <button type="button" class="btn-sm" id="btnSettings">⚙️</button>
       </div>
     </div>
-    <p class="reorder-hint">ลาก ⋮⋮ เพื่อจัดลำดับหมวด — ระบบจำไว้</p>
+    <p class="reorder-hint">ลาก ⋮⋮ จัดลำดับ · ⚙ ปรับสีกล่อง</p>
 
     <div id="blocksContainer">
       <div class="sortable-block" data-block-id="summary">
@@ -389,7 +468,7 @@
       <div class="sortable-block" data-block-id="meals">
         <span class="drag-handle">⋮⋮</span>
         <section class="section priority">
-          <div class="section-title">เพิ่มมื้อ (<span id="mealCount">0</span>/7)</div>
+          <div class="section-title">เพิ่มมื้อ · <span id="mealCount">0</span> มื้อ</div>
           <div class="template-chips" id="templateChips"></div>
           <div class="meal-add-row">
             <input type="text" id="mealInput" placeholder="Cal,Protein" autocomplete="off">
@@ -405,7 +484,7 @@
       <div class="sortable-block" data-block-id="exercises">
         <span class="drag-handle">⋮⋮</span>
         <section class="section burn">
-          <div class="section-title">ออกกำลังกาย (<span id="exerciseCount">0</span>/5)</div>
+          <div class="section-title">ออกกำลังกาย · <span id="exerciseCount">0</span> รายการ</div>
           <div class="template-chips" id="exerciseTemplateChips"></div>
           <div class="meal-add-row">
             <input type="number" id="exerciseKcal" placeholder="kcal" inputmode="numeric" min="0" style="width:58px;flex:none">
@@ -557,25 +636,40 @@
     </div>
   </div>
 
-  <div class="edit-overlay" id="exerciseHistoryOverlay">
+  <div class="edit-overlay sheet-full" id="exerciseHistoryOverlay">
     <div class="edit-sheet">
       <h3>ประวัติออกกำลังกาย</h3>
-      <p class="sheet-desc">แตะแถวเพื่อไปวันนั้น · รายการจากโน้ตที่บันทึก</p>
+      <p class="sheet-desc">แก้โน้ต/kcal ได้เลย · แตะวันที่เพื่อไปวันนั้น</p>
       <div class="chart-period-btns" id="exHistoryPeriodBtns">
         <button type="button" class="period-pill active" data-days="7">7D</button>
         <button type="button" class="period-pill" data-days="30">30D</button>
+        <button type="button" class="period-pill" data-days="90">90D</button>
       </div>
       <div class="ex-history-wrap">
         <table class="ex-history-table" id="exHistoryTable">
           <thead>
-            <tr><th>วันที่</th><th>รายการ</th><th>kcal</th></tr>
+            <tr><th>วันที่</th><th>รายการ</th><th>kcal</th><th></th></tr>
           </thead>
           <tbody id="exHistoryBody"></tbody>
         </table>
         <p class="empty-meals" id="exHistoryEmpty" style="display:none">ยังไม่มีประวัติในช่วงนี้</p>
       </div>
       <div class="edit-actions">
-        <button type="button" class="btn btn-ghost" id="btnCloseExHistory" style="flex:1">ปิด</button>
+        <button type="button" class="btn btn-ghost" id="btnCloseExHistory">ปิด</button>
+        <button type="button" class="btn" id="btnSaveExHistory">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-overlay" id="blockStyleOverlay">
+    <div class="edit-sheet">
+      <h3 id="blockStyleTitle">ปรับสีกล่อง</h3>
+      <p class="sheet-desc" id="blockStyleDesc">ตั้งสีพื้นหลังและตัวอักษร — ว่าง = ใช้ค่าเริ่มต้น</p>
+      <div class="style-color-grid" id="blockStyleFields"></div>
+      <div class="edit-actions">
+        <button type="button" class="btn btn-ghost" id="btnResetBlockStyle">รีเซ็ต</button>
+        <button type="button" class="btn btn-ghost" id="btnCancelBlockStyle">ปิด</button>
+        <button type="button" class="btn" id="btnSaveBlockStyle">บันทึก</button>
       </div>
     </div>
   </div>
@@ -671,8 +765,6 @@
     const SETTINGS_KEY = 'calorieTracker:settings';
     const TEMPLATES_KEY = 'calorieTracker:templates';
     const EXERCISE_TEMPLATES_KEY = 'calorieTracker:exerciseTemplates';
-    const MAX_MEALS = 7;
-    const MAX_EXERCISES = 5;
     const BMR_MULTIPLIER = 22;
     const KCAL_PER_KG = 7700;
     const DEFAULT_PROTEIN_MULT = 1.55;
@@ -687,6 +779,42 @@
     ];
 
     const DEFAULT_BLOCK_ORDER = ['summary', 'date', 'stats', 'meals', 'exercises', 'profile', 'charts', 'data'];
+
+    const BLOCK_LABELS = {
+      summary: 'สรุปย้อนหลัง', date: 'เลือกวัน', stats: 'สรุปรายวัน',
+      meals: 'บันทึกการกิน', exercises: 'ออกกำลังกาย', profile: 'ข้อมูลผู้ใช้',
+      charts: 'กราฟ', data: 'สำรองข้อมูล',
+    };
+
+    const BLOCK_STYLE_COMMON = [
+      { key: 'bg', label: 'พื้นหลัง', css: '--blk-bg' },
+      { key: 'bg2', label: 'พื้นหลังรอง', css: '--blk-bg-2' },
+      { key: 'text', label: 'ตัวอักษร', css: '--blk-text' },
+      { key: 'title', label: 'หัวข้อ/รอง', css: '--blk-title' },
+      { key: 'accent', label: 'เน้น/ลิงก์', css: '--blk-accent' },
+    ];
+
+    const BLOCK_STYLE_EXTRA = {
+      summary: [
+        { key: 'good', label: 'ลด/ดี (↓)', css: '--blk-good' },
+        { key: 'bad', label: 'เพิ่ม/แย่ (↑)', css: '--blk-bad' },
+        { key: 'burn', label: 'เบิร์น', css: '--blk-burn' },
+      ],
+      stats: [
+        { key: 'cal', label: 'แคลอรี่', css: '--blk-cal' },
+        { key: 'prot', label: 'โปรตีน', css: '--blk-prot' },
+        { key: 'balPos', label: 'Balance บวก', css: '--blk-bal-pos' },
+        { key: 'balNeg', label: 'Balance ลบ', css: '--blk-bal-neg' },
+        { key: 'est', label: 'Est.', css: '--blk-est' },
+        { key: 'good', label: 'ลด/ดี', css: '--blk-good' },
+        { key: 'bad', label: 'เพิ่ม/แย่', css: '--blk-bad' },
+      ],
+    };
+
+    const BLOCK_STYLE_DEFAULTS = {
+      dark: { bg: '#1e293b', bg2: '#0f172a', text: '#f1f5f9', title: '#94a3b8', accent: '#38bdf8', good: '#4ade80', bad: '#f87171', burn: '#4ade80', cal: '#fbbf24', prot: '#a78bfa', balPos: '#4ade80', balNeg: '#f87171', est: '#4ade80' },
+      light: { bg: '#ffffff', bg2: '#f1f5f9', text: '#0f172a', title: '#64748b', accent: '#0284c7', good: '#16a34a', bad: '#dc2626', burn: '#16a34a', cal: '#d97706', prot: '#7c3aed', balPos: '#16a34a', balNeg: '#dc2626', est: '#16a34a' },
+    };
 
     const INFO_TEXTS = {
       cal: { title: 'แคลอรี่รวม', body: [['Total Cal', 'ผลรวมแคลอรี่จากทุกมื้อในวันนี้ — ยังไม่กิน = 0'], ['เป้าหมาย', 'กินเข้าไปเพื่อลดขาดแคล (Balance)']] },
@@ -720,6 +848,7 @@
     let dragState = null;
     let pendingTplConfirm = null;
     let exHistoryPeriodDays = 7;
+    let editingBlockStyleId = null;
 
     const $ = (s) => document.querySelector(s);
 
@@ -742,7 +871,11 @@
       btnExerciseHistory: $('#btnExerciseHistory'),
       exerciseHistoryOverlay: $('#exerciseHistoryOverlay'), exHistoryPeriodBtns: $('#exHistoryPeriodBtns'),
       exHistoryTable: $('#exHistoryTable'), exHistoryBody: $('#exHistoryBody'), exHistoryEmpty: $('#exHistoryEmpty'),
-      btnCloseExHistory: $('#btnCloseExHistory'),
+      btnCloseExHistory: $('#btnCloseExHistory'), btnSaveExHistory: $('#btnSaveExHistory'),
+      blockStyleOverlay: $('#blockStyleOverlay'), blockStyleTitle: $('#blockStyleTitle'),
+      blockStyleFields: $('#blockStyleFields'),
+      btnResetBlockStyle: $('#btnResetBlockStyle'), btnCancelBlockStyle: $('#btnCancelBlockStyle'),
+      btnSaveBlockStyle: $('#btnSaveBlockStyle'),
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
@@ -794,6 +927,10 @@
     function formatDateLabel(d) {
       if (d === todayStr()) return 'วันนี้';
       return new Date(d + 'T12:00:00').toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    function formatDateShort(d) {
+      const [y, m, day] = d.split('-');
+      return day + '/' + m;
     }
     function formatTimeDisplay(t) { if (!t) return ''; const [h, m] = t.split(':'); return parseInt(h, 10) + ':' + m; }
     function storageKey(d) { return STORAGE_PREFIX + d; }
@@ -857,6 +994,7 @@
         chartPeriodDays: 30,
         lastCompensationPct: 0,
         programStartDate: '',
+        blockStyles: {},
         templates: loadTemplateList(),
         exerciseTemplates: loadExerciseTemplateList(),
         profile: { weight: '', age: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
@@ -878,6 +1016,7 @@
           chartPeriodDays: s.chartPeriodDays || 30,
           lastCompensationPct: parseFloat(s.lastCompensationPct) || 0,
           programStartDate: s.programStartDate || '',
+          blockStyles: s.blockStyles && typeof s.blockStyles === 'object' ? s.blockStyles : {},
           templates: loadTemplateList(),
           exerciseTemplates: loadExerciseTemplateList(),
           profile: {
@@ -1325,7 +1464,6 @@
 
     function renderMeals(meals) {
       els.mealCount.textContent = meals.length;
-      els.btnAddMeal.disabled = meals.length >= MAX_MEALS;
       els.emptyMeals.style.display = meals.length ? 'none' : 'block';
       els.mealList.innerHTML = '';
       [...meals].sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((m) => {
@@ -1415,7 +1553,6 @@
 
     function renderExercises(exercises) {
       els.exerciseCount.textContent = exercises.length;
-      els.btnAddExercise.disabled = exercises.length >= MAX_EXERCISES;
       els.emptyExercises.style.display = exercises.length ? 'none' : 'block';
       els.exerciseList.innerHTML = '';
       [...exercises].sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((ex) => {
@@ -1431,53 +1568,98 @@
       });
     }
 
-    function formatExerciseDayItems(exercises) {
-      return [...exercises]
-        .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-        .map((ex) => {
-          const note = (ex.note || '').trim();
-          return note || Math.round(ex.calories) + ' kcal';
-        })
-        .join(', ');
-    }
-
-    function collectExerciseHistory(days) {
+    function collectExerciseHistoryRows(days) {
       const end = currentDate <= todayStr() ? currentDate : todayStr();
       const rows = [];
-      getDateRange(end, days).forEach((date) => {
-        const exercises = loadDay(date).exercises || [];
-        if (!exercises.length) return;
-        rows.push({
-          date,
-          items: formatExerciseDayItems(exercises),
-          totalKcal: sumExerciseBurn(exercises),
+      getDateRange(end, days).reverse().forEach((date) => {
+        const exercises = [...(loadDay(date).exercises || [])].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+        exercises.forEach((ex, i) => {
+          rows.push({ date, exercise: ex, showDate: i === 0 });
         });
       });
-      return rows.reverse();
+      return rows;
     }
 
     function renderExerciseHistory() {
-      const rows = collectExerciseHistory(exHistoryPeriodDays);
+      const rows = collectExerciseHistoryRows(exHistoryPeriodDays);
       els.exHistoryBody.innerHTML = '';
       const hasRows = rows.length > 0;
       els.exHistoryTable.style.display = hasRows ? '' : 'none';
       els.exHistoryEmpty.style.display = hasRows ? 'none' : 'block';
       rows.forEach((row) => {
+        const ex = row.exercise;
         const tr = document.createElement('tr');
         tr.className = 'ex-history-row';
         tr.dataset.date = row.date;
+        tr.dataset.exId = ex.id;
+        tr.dataset.exTime = ex.time || '';
+
         const tdDate = document.createElement('td');
         tdDate.className = 'ex-date';
-        tdDate.textContent = formatDateLabel(row.date);
-        const tdItems = document.createElement('td');
-        tdItems.className = 'ex-items';
-        tdItems.textContent = row.items;
+        if (row.showDate) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.dataset.gotoDate = row.date;
+          btn.textContent = formatDateShort(row.date);
+          tdDate.appendChild(btn);
+        }
+
+        const tdNote = document.createElement('td');
+        const noteInp = document.createElement('input');
+        noteInp.type = 'text';
+        noteInp.dataset.exNote = '1';
+        noteInp.placeholder = 'เช่น อก';
+        noteInp.value = ex.note || '';
+        tdNote.appendChild(noteInp);
+
         const tdKcal = document.createElement('td');
-        tdKcal.className = 'ex-kcal';
-        tdKcal.textContent = String(Math.round(row.totalKcal));
-        tr.append(tdDate, tdItems, tdKcal);
+        const kcalInp = document.createElement('input');
+        kcalInp.type = 'number';
+        kcalInp.min = '0';
+        kcalInp.inputMode = 'numeric';
+        kcalInp.dataset.exKcal = '1';
+        kcalInp.value = String(Math.round(ex.calories));
+        tdKcal.appendChild(kcalInp);
+
+        const tdDel = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn btn-danger btn-icon ex-del';
+        delBtn.dataset.exDel = '1';
+        delBtn.textContent = '✕';
+        tdDel.appendChild(delBtn);
+
+        tr.append(tdDate, tdNote, tdKcal, tdDel);
         els.exHistoryBody.appendChild(tr);
       });
+    }
+
+    function saveExerciseHistory() {
+      const datesInView = new Set();
+      const byDate = {};
+      els.exHistoryBody.querySelectorAll('tr.ex-history-row').forEach((tr) => {
+        const date = tr.dataset.date;
+        if (!date) return;
+        datesInView.add(date);
+        if (tr.dataset.deleted) return;
+        const note = tr.querySelector('[data-ex-note]')?.value.trim() || '';
+        const kcal = parseFloat(tr.querySelector('[data-ex-kcal]')?.value);
+        if (isNaN(kcal) || kcal <= 0) return;
+        (byDate[date] = byDate[date] || []).push({
+          id: tr.dataset.exId || crypto.randomUUID(),
+          calories: kcal,
+          note,
+          time: tr.dataset.exTime || nowTimeStr(),
+        });
+      });
+      datesInView.forEach((date) => {
+        const data = loadDay(date);
+        data.exercises = byDate[date] || [];
+        saveDay(date, data);
+      });
+      closeExerciseHistory();
+      refresh();
+      showToast('บันทึกประวัติแล้ว', 'success');
     }
 
     function openExerciseHistory() {
@@ -1750,6 +1932,108 @@
         const el = els.blocksContainer.querySelector('[data-block-id="' + id + '"]');
         if (el) els.blocksContainer.appendChild(el);
       });
+      initBlockStyleButtons();
+      applyBlockStyles();
+    }
+
+    function getBlockStyleFields(blockId) {
+      return [...BLOCK_STYLE_COMMON, ...(BLOCK_STYLE_EXTRA[blockId] || [])];
+    }
+
+    function getThemeColorDefault(key) {
+      const theme = loadSettings().theme === 'light' ? 'light' : 'dark';
+      return BLOCK_STYLE_DEFAULTS[theme][key] || '#888888';
+    }
+
+    function applyBlockStyles() {
+      const styles = loadSettings().blockStyles || {};
+      els.blocksContainer.querySelectorAll('.sortable-block').forEach((block) => {
+        const id = block.dataset.blockId;
+        const s = styles[id] || {};
+        getBlockStyleFields(id).forEach(({ key, css }) => {
+          if (s[key]) block.style.setProperty(css, s[key]);
+          else block.style.removeProperty(css);
+        });
+      });
+    }
+
+    function initBlockStyleButtons() {
+      els.blocksContainer.querySelectorAll('.sortable-block').forEach((block) => {
+        if (block.querySelector('.block-style-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'block-style-btn';
+        btn.title = 'ปรับสีกล่อง';
+        btn.textContent = '⚙';
+        btn.dataset.blockId = block.dataset.blockId;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openBlockStyle(block.dataset.blockId);
+        });
+        block.appendChild(btn);
+      });
+    }
+
+    function openBlockStyle(blockId) {
+      editingBlockStyleId = blockId;
+      const saved = (loadSettings().blockStyles || {})[blockId] || {};
+      els.blockStyleTitle.textContent = 'ปรับสี — ' + (BLOCK_LABELS[blockId] || blockId);
+      els.blockStyleFields.innerHTML = '';
+      getBlockStyleFields(blockId).forEach(({ key, label }) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'style-color-field';
+        const lab = document.createElement('label');
+        lab.textContent = label;
+        const inp = document.createElement('input');
+        inp.type = 'color';
+        inp.dataset.styleKey = key;
+        inp.value = saved[key] || getThemeColorDefault(key);
+        const clr = document.createElement('button');
+        clr.type = 'button';
+        clr.className = 'btn-clear-style';
+        clr.dataset.styleKey = key;
+        clr.textContent = 'ใช้ค่าเริ่มต้น';
+        wrap.append(lab, inp, clr);
+        els.blockStyleFields.appendChild(wrap);
+      });
+      els.blockStyleOverlay.classList.add('open');
+    }
+
+    function readBlockStyleEditor() {
+      const out = {};
+      els.blockStyleFields.querySelectorAll('input[type="color"]').forEach((inp) => {
+        const key = inp.dataset.styleKey;
+        const def = getThemeColorDefault(key);
+        if (inp.value && inp.value.toLowerCase() !== def.toLowerCase()) out[key] = inp.value;
+      });
+      return out;
+    }
+
+    function saveBlockStyle() {
+      if (!editingBlockStyleId) return;
+      const all = { ...(loadSettings().blockStyles || {}) };
+      const next = readBlockStyleEditor();
+      if (Object.keys(next).length) all[editingBlockStyleId] = next;
+      else delete all[editingBlockStyleId];
+      saveSettings({ blockStyles: all });
+      closeBlockStyle();
+      applyBlockStyles();
+      showToast('บันทึกสีกล่องแล้ว', 'success');
+    }
+
+    function resetBlockStyle() {
+      if (!editingBlockStyleId) return;
+      const all = { ...(loadSettings().blockStyles || {}) };
+      delete all[editingBlockStyleId];
+      saveSettings({ blockStyles: all });
+      closeBlockStyle();
+      applyBlockStyles();
+      showToast('รีเซ็ตสีกล่องแล้ว', 'success');
+    }
+
+    function closeBlockStyle() {
+      editingBlockStyleId = null;
+      els.blockStyleOverlay.classList.remove('open');
     }
 
     function initDragReorder() {
@@ -1835,7 +2119,6 @@
 
     function addMeal(cal, prot, time) {
       const data = loadDay(currentDate);
-      if (data.meals.length >= MAX_MEALS) { showToast('สูงสุด ' + MAX_MEALS + ' มื้อ', 'error'); return; }
       data.meals.push({ id: crypto.randomUUID(), calories: cal, protein: prot, time: time || nowTimeStr() });
       touchProgramStart(currentDate);
       saveDay(currentDate, data);
@@ -1882,7 +2165,6 @@
       const k = parseFloat(kcal);
       if (isNaN(k) || k <= 0) { showToast('ใส่แคลอรี่ที่เผา', 'error'); return; }
       const data = loadDay(currentDate);
-      if (data.exercises.length >= MAX_EXERCISES) { showToast('สูงสุด ' + MAX_EXERCISES + ' รายการ', 'error'); return; }
       data.exercises.push({
         id: crypto.randomUUID(),
         calories: k,
@@ -2274,6 +2556,7 @@
 
     els.btnExerciseHistory.onclick = openExerciseHistory;
     els.btnCloseExHistory.onclick = closeExerciseHistory;
+    els.btnSaveExHistory.onclick = saveExerciseHistory;
     els.exerciseHistoryOverlay.onclick = (e) => { if (e.target === els.exerciseHistoryOverlay) closeExerciseHistory(); };
     els.exHistoryPeriodBtns.onclick = (e) => {
       const btn = e.target.closest('.period-pill');
@@ -2283,10 +2566,21 @@
       renderExerciseHistory();
     };
     els.exHistoryBody.onclick = (e) => {
-      const row = e.target.closest('.ex-history-row');
-      if (!row?.dataset.date) return;
-      closeExerciseHistory();
-      setDate(row.dataset.date);
+      const goto = e.target.closest('[data-goto-date]');
+      if (goto) { closeExerciseHistory(); setDate(goto.dataset.gotoDate); return; }
+      const del = e.target.closest('[data-ex-del]');
+      if (del) { const tr = del.closest('tr'); tr.dataset.deleted = '1'; tr.style.opacity = '0.35'; }
+    };
+
+    els.btnSaveBlockStyle.onclick = saveBlockStyle;
+    els.btnCancelBlockStyle.onclick = closeBlockStyle;
+    els.btnResetBlockStyle.onclick = resetBlockStyle;
+    els.blockStyleOverlay.onclick = (e) => { if (e.target === els.blockStyleOverlay) closeBlockStyle(); };
+    els.blockStyleFields.onclick = (e) => {
+      const clr = e.target.closest('.btn-clear-style');
+      if (!clr) return;
+      const inp = els.blockStyleFields.querySelector('input[data-style-key="' + clr.dataset.styleKey + '"]');
+      if (inp) inp.value = getThemeColorDefault(clr.dataset.styleKey);
     };
 
     els.btnSettings.onclick = openSettings;
