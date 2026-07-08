@@ -408,6 +408,11 @@
             </div>
           </div>
           <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก & เอว</button>
+          <div class="field" style="margin-top:0.45rem">
+            <label for="programStartDate">📅 วันเริ่มโปรแกรม <button type="button" class="info-btn" data-info="start">ⓘ</button></label>
+            <input type="date" id="programStartDate" max="">
+            <p class="hint">ก่อนวันนี้ = ไม่คำนวณ BMR/Est. ไม่ดึงค่าย้อนหลัง</p>
+          </div>
           <div class="field-row" style="margin-top:0.45rem">
             <div class="field">
               <label for="targetWeight">🎯 เป้าน้ำหนัก kg</label>
@@ -622,6 +627,7 @@
       adj: { title: 'ชดเชยพลังงาน', body: [['จำค่า', 'ใช้ค่าล่าสุดเสมอจนกว่าจะเปลี่ยนใหม่'], ['สูตร', 'ชดเชย kcal = BMR × % ÷ 100'], ['ตัวอย่าง', '+5% ถ้าสังเกตว่าขาดแคลมากไป'], ['ผล', 'เพิ่ม Bsum → Est. ลดน้ำหนักแม่นขึ้น']] },
       loss: { title: 'Est. ลดน้ำหนัก (หัวใจแอป)', body: [['สูตร', 'Balance ÷ ' + KCAL_PER_KG + ' = กก.'], ['Balance', 'แคลอรี่กิน − (BMR + ชดเชย + ออกกำลัง)'], ['รวมเบิร์น', 'รวมการเผาพลังงานทั้งวัน → ส่งผลน้ำหนัก'], ['ติดลบ', 'ประมาณการลดน้ำหนักวันนั้น (ดี)'], ['หมายเหตุ', '1 กก. ไขมัน ≈ ' + KCAL_PER_KG + ' kcal']] },
       goal: { title: 'เป้าหมาย', body: [['ตั้งค่า', 'เป้าน้ำหนัก + เป้าเอว ในข้อมูลผู้ใช้'], ['กราฟ', 'เส้นประสีเขียว = เป้าหมาย'], ['แรงจูงใจ', 'เห็นความห่างจากเส้นเป้าทุกวัน'], ['แอปทั่วไป', 'MyFitnessPal, Lose It ใช้เส้นเป้า + progress bar คล้ายกัน']] },
+      start: { title: 'วันเริ่มโปรแกรม', body: [['คืออะไร', 'วันแรกที่เริ่มติดตามจริง ๆ'], ['ก่อนวันนี้', 'ไม่คำนวณ BMR/Est. ไม่ดึงน้ำหนัก/เอวย้อนหลัง'], ['ตั้งค่า', 'ตั้งเองได้ หรือระบบตั้งอัตโนมัติเมื่อบันทึกครั้งแรก'], ['แอปทั่วไป', 'MyFitnessPal = Start Date · Zero = วันเริ่มลดน้ำหนัก']] },
     };
 
     let chartPeriodDays = 30;
@@ -658,6 +664,7 @@
       bsumStrip: $('#bsumStrip'), adjLink: $('#adjLink'),
       profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
       targetWeight: $('#targetWeight'), targetWaist: $('#targetWaist'), goalProgress: $('#goalProgress'),
+      programStartDate: $('#programStartDate'),
       exerciseKcal: $('#exerciseKcal'), exerciseNote: $('#exerciseNote'), exerciseTime: $('#exerciseTime'),
       btnAddExercise: $('#btnAddExercise'), btnQuickExTemplate: $('#btnQuickExTemplate'),
       exerciseList: $('#exerciseList'), exerciseTemplateChips: $('#exerciseTemplateChips'),
@@ -721,6 +728,7 @@
         sectionOrder: [...DEFAULT_BLOCK_ORDER],
         chartPeriodDays: 30,
         lastCompensationPct: 0,
+        programStartDate: '',
         templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
         exerciseTemplates: DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
         profile: { weight: '', age: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
@@ -741,6 +749,7 @@
           sectionOrder: merged,
           chartPeriodDays: s.chartPeriodDays || 30,
           lastCompensationPct: parseFloat(s.lastCompensationPct) || 0,
+          programStartDate: s.programStartDate || '',
           templates: Array.isArray(s.templates) && s.templates.length ? s.templates : DEFAULT_TEMPLATES.map((t) => ({ ...t })),
           exerciseTemplates: Array.isArray(s.exerciseTemplates) && s.exerciseTemplates.length
             ? s.exerciseTemplates : DEFAULT_EXERCISE_TEMPLATES.map((t) => ({ ...t })),
@@ -768,6 +777,43 @@
     function getWeightLog() { return loadSettings().profile.weightLog || {}; }
     function getWaistLog() { return loadSettings().profile.waistLog || {}; }
 
+    function getWaistLog() { return loadSettings().profile.waistLog || {}; }
+
+    function inferProgramStartDate() {
+      const dates = [];
+      Object.keys(getWeightLog()).forEach((d) => dates.push(d));
+      Object.keys(getWaistLog()).forEach((d) => dates.push(d));
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key?.startsWith(STORAGE_PREFIX) || key === SETTINGS_KEY) continue;
+        const d = key.slice(STORAGE_PREFIX.length);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+        try {
+          const raw = JSON.parse(localStorage.getItem(key));
+          if (raw?.meals?.length || raw?.exercises?.length) dates.push(d);
+        } catch { /* ignore */ }
+      }
+      dates.sort();
+      return dates.length ? dates[0] : null;
+    }
+
+    function getProgramStartDate() {
+      const s = loadSettings().programStartDate;
+      if (s && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      return inferProgramStartDate();
+    }
+
+    function isActiveTrackingDate(date) {
+      const start = getProgramStartDate();
+      return !start || date >= start;
+    }
+
+    function touchProgramStart(date) {
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+      const cur = loadSettings().programStartDate;
+      if (!cur) saveSettings({ programStartDate: date });
+    }
+
     function getLastCompensationPct() {
       return parseFloat(loadSettings().lastCompensationPct) || 0;
     }
@@ -777,6 +823,7 @@
       const w = parseFloat(weight);
       if (isNaN(w) || w <= 0) delete log[date];
       else log[date] = w;
+      touchProgramStart(date);
       const profile = { ...loadSettings().profile, weightLog: log };
       profile.weight = String(getLatestWeightFromLog(log) || profile.weight || '');
       saveSettings({ profile });
@@ -787,6 +834,7 @@
       const w = parseFloat(waist);
       if (isNaN(w) || w <= 0) delete log[date];
       else log[date] = w;
+      touchProgramStart(date);
       const profile = { ...loadSettings().profile, waistLog: log };
       const latest = getLatestFromLog(log);
       if (latest) profile.waist = String(latest);
@@ -806,18 +854,21 @@
     }
 
     function getWaistOnDate(date) {
+      if (!isActiveTrackingDate(date)) return 0;
+      const start = getProgramStartDate();
       const log = getWaistLog();
       if (log[date]) return parseFloat(log[date]);
-      const sorted = Object.keys(log).filter((d) => d <= date).sort();
+      const sorted = Object.keys(log).filter((d) => d <= date && (!start || d >= start)).sort();
       if (sorted.length) return parseFloat(log[sorted[sorted.length - 1]]);
-      const legacy = parseFloat(loadSettings().profile.waist);
-      return !isNaN(legacy) && legacy > 0 ? legacy : 0;
+      return 0;
     }
 
     function getWeightOnDate(date) {
+      if (!isActiveTrackingDate(date)) return 0;
+      const start = getProgramStartDate();
       const log = getWeightLog();
       if (log[date]) return parseFloat(log[date]);
-      const sorted = Object.keys(log).filter((d) => d <= date).sort();
+      const sorted = Object.keys(log).filter((d) => d <= date && (!start || d >= start)).sort();
       if (sorted.length) return parseFloat(log[sorted[sorted.length - 1]]);
       const legacy = loadDay(date)._legacyWeight;
       const lw = parseFloat(legacy);
@@ -906,10 +957,12 @@
         waistLog[todayStr()] = legacyWaist;
         changed = true;
       }
-      if (changed || !settings.profile.weight || lastComp !== settings.lastCompensationPct) {
+      if (changed || !settings.profile.weight || lastComp !== settings.lastCompensationPct || (!settings.programStartDate && inferProgramStartDate())) {
         const latest = getLatestWeightFromLog(log);
+        const inferred = inferProgramStartDate();
         saveSettings({
           lastCompensationPct: lastComp,
+          programStartDate: settings.programStartDate || inferred || '',
           profile: {
             ...settings.profile,
             weightLog: log,
@@ -957,7 +1010,13 @@
     }
 
     function getDateRange(end, days) {
-      const a = []; for (let i = days - 1; i >= 0; i--) a.push(shiftDate(end, -i)); return a;
+      const start = getProgramStartDate();
+      const a = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = shiftDate(end, -i);
+        if (!start || d >= start) a.push(d);
+      }
+      return a;
     }
 
     function formatWC(d) {
@@ -1045,6 +1104,21 @@
     }
 
     function renderDashboard(st) {
+      if (!isActiveTrackingDate(currentDate)) {
+        els.totalCal.textContent = '—';
+        els.calSub.textContent = 'ก่อนเริ่ม';
+        els.protRemain.textContent = '—';
+        els.protSub.textContent = '—';
+        els.protCard.classList.remove('bad');
+        els.balance.textContent = '—';
+        els.balanceCard.classList.remove('neg', 'pos');
+        els.balSub.textContent = '—';
+        els.estVal.textContent = '—';
+        els.estSub.textContent = 'ก่อนเริ่มโปรแกรม';
+        els.estCard.classList.remove('neg');
+        els.bsumStrip.textContent = 'วันนี้ก่อนวันเริ่มโปรแกรม (' + getProgramStartDate() + ') — ไม่คำนวณ';
+        return;
+      }
       els.totalCal.textContent = Math.round(st.totalCal);
       els.calSub.textContent = 'kcal กิน';
 
@@ -1150,8 +1224,10 @@
         logDates.forEach((d) => { if (!dates.includes(d)) dates.push(d); });
         waistDates.forEach((d) => { if (!dates.includes(d)) dates.push(d); });
         dates.sort();
-        if (!dates.length) return getDateRange(endDate, 30);
-        const first = dates[0];
+        const start = getProgramStartDate();
+        const filtered = start ? dates.filter((d) => d >= start) : dates;
+        if (!filtered.length) return getDateRange(endDate, 30);
+        const first = filtered[0];
         const span = Math.ceil((new Date(endDate) - new Date(first)) / 86400000) + 1;
         return getDateRange(endDate, Math.min(span, 999));
       }
@@ -1497,13 +1573,17 @@
 
     function refresh() {
       const profile = loadSettings().profile;
-      const dayWeight = getWeightOnDate(currentDate);
-      const dayWaist = getWaistOnDate(currentDate);
-      els.profileWeight.value = dayWeight > 0 ? dayWeight : profile.weight;
+      const weightLog = getWeightLog();
+      const waistLog = getWaistLog();
+      const start = getProgramStartDate();
+      els.profileWeight.value = weightLog[currentDate] != null ? weightLog[currentDate] : '';
       els.profileAge.value = profile.age;
-      els.profileWaist.value = dayWaist > 0 ? dayWaist : profile.waist;
+      els.profileWaist.value = waistLog[currentDate] != null ? waistLog[currentDate] : '';
       els.targetWeight.value = profile.targetWeight || '';
       els.targetWaist.value = profile.targetWaist || '';
+      els.programStartDate.value = start || '';
+      els.programStartDate.max = todayStr();
+      els.datePicker.min = start || '';
       const data = loadDay(currentDate);
       const w = getWeightOnDate(currentDate);
       renderMeals(data.meals);
@@ -1519,8 +1599,11 @@
     function setDate(d) {
       currentDate = d;
       els.datePicker.value = d;
-      els.dateLabel.textContent = formatDateLabel(d);
+      const start = getProgramStartDate();
+      const beforeStart = start && d < start;
+      els.dateLabel.textContent = beforeStart ? 'ก่อนเริ่มโปรแกรม' : formatDateLabel(d);
       els.btnNextDay.disabled = d >= todayStr();
+      els.btnPrevDay.disabled = start ? shiftDate(d, -1) < start : false;
       els.mealTime.value = nowTimeStr();
       els.exerciseTime.value = nowTimeStr();
       refresh();
@@ -1530,6 +1613,7 @@
       const data = loadDay(currentDate);
       if (data.meals.length >= MAX_MEALS) { showToast('สูงสุด ' + MAX_MEALS + ' มื้อ', 'error'); return; }
       data.meals.push({ id: crypto.randomUUID(), calories: cal, protein: prot, time: time || nowTimeStr() });
+      touchProgramStart(currentDate);
       saveDay(currentDate, data);
       const st = calculate(data, getWeightOnDate(currentDate));
       if (st.proteinTarget > 0 && st.proteinRemain >= 0) {
@@ -1581,6 +1665,7 @@
         note: els.exerciseNote.value.trim(),
         time: els.exerciseTime.value || nowTimeStr(),
       });
+      touchProgramStart(currentDate);
       saveDay(currentDate, data);
       els.exerciseKcal.value = ''; els.exerciseNote.value = ''; els.exerciseTime.value = nowTimeStr();
       refresh();
@@ -1829,7 +1914,12 @@
 
     els.btnPrevDay.onclick = () => setDate(shiftDate(currentDate, -1));
     els.btnNextDay.onclick = () => { const n = shiftDate(currentDate, 1); if (n <= todayStr()) setDate(n); };
-    els.datePicker.onchange = () => { const p = els.datePicker.value; if (p && p <= todayStr()) setDate(p); else els.datePicker.value = currentDate; };
+    els.datePicker.onchange = () => {
+      const p = els.datePicker.value;
+      const start = getProgramStartDate();
+      if (p && p <= todayStr() && (!start || p >= start)) setDate(p);
+      else els.datePicker.value = currentDate;
+    };
 
     els.profileWeight.oninput = () => {
       const w = els.profileWeight.value;
@@ -1858,6 +1948,15 @@
     }
     els.targetWeight.onchange = saveGoals;
     els.targetWaist.onchange = saveGoals;
+    els.programStartDate.onchange = () => {
+      const v = els.programStartDate.value;
+      if (!v) { saveSettings({ programStartDate: '' }); refresh(); return; }
+      if (v > todayStr()) { els.programStartDate.value = getProgramStartDate() || ''; showToast('เลือกวันไม่เกินวันนี้', 'error'); return; }
+      saveSettings({ programStartDate: v });
+      if (currentDate < v) setDate(v);
+      else refresh();
+      showToast('วันเริ่มโปรแกรม: ' + v, 'success');
+    };
 
     els.btnAddMeal.onclick = handleAddMeal;
     els.btnAddExercise.onclick = handleAddExercise;
