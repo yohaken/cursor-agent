@@ -54,24 +54,9 @@
     }
     .drag-handle:active { cursor: grabbing; opacity: 1; }
 
-    .block-style-btn {
-      position: absolute; top: 0.45rem; left: 0.45rem;
-      background: var(--surface-2); border: none; color: var(--muted);
-      width: 26px; height: 26px; border-radius: 7px; font-size: 0.72rem;
-      cursor: pointer; z-index: 3; display: flex; align-items: center; justify-content: center;
-      opacity: 0.65;
-    }
-    .block-style-btn:active { opacity: 1; }
-
     .sortable-block .period-summary,
     .sortable-block .section,
-    .sortable-block .date-nav {
-      padding-left: 2rem;
-      background: var(--blk-bg, var(--surface));
-      color: var(--blk-text, var(--text));
-    }
-    .sortable-block .section-toggle { padding-left: 2rem; }
-    .sortable-block[data-block-id="stats"] .inline-stats { padding: 0.2rem 1.4rem 0 2rem; }
+    .sortable-block .date-nav,
     .sortable-block .mini-stat,
     .sortable-block .bsum-strip {
       background: var(--blk-bg, var(--surface));
@@ -414,7 +399,7 @@
         <button type="button" class="btn-sm" id="btnSettings">⚙️</button>
       </div>
     </div>
-    <p class="reorder-hint">ลาก ⋮⋮ จัดลำดับ · ⚙ ปรับสีกล่อง</p>
+    <p class="reorder-hint">ลาก ⋮⋮ เพื่อจัดลำดับหมวด — ระบบจำไว้</p>
 
     <div id="blocksContainer">
       <div class="sortable-block" data-block-id="summary">
@@ -661,19 +646,6 @@
     </div>
   </div>
 
-  <div class="edit-overlay" id="blockStyleOverlay">
-    <div class="edit-sheet">
-      <h3 id="blockStyleTitle">ปรับสีกล่อง</h3>
-      <p class="sheet-desc" id="blockStyleDesc">ตั้งสีพื้นหลังและตัวอักษร — ว่าง = ใช้ค่าเริ่มต้น</p>
-      <div class="style-color-grid" id="blockStyleFields"></div>
-      <div class="edit-actions">
-        <button type="button" class="btn btn-ghost" id="btnResetBlockStyle">รีเซ็ต</button>
-        <button type="button" class="btn btn-ghost" id="btnCancelBlockStyle">ปิด</button>
-        <button type="button" class="btn" id="btnSaveBlockStyle">บันทึก</button>
-      </div>
-    </div>
-  </div>
-
   <div class="edit-overlay" id="settingsOverlay">
     <div class="edit-sheet">
       <h3>ตั้งค่า</h3>
@@ -687,6 +659,13 @@
       <p class="sheet-desc" style="margin-top:0.6rem">เทมเพลตออกกำลังกาย</p>
       <div id="exerciseTemplateEditor"></div>
       <button type="button" class="btn btn-ghost" id="btnAddExTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตออกกำลัง</button>
+      <p class="sheet-desc" style="margin-top:0.6rem">ปรับสีกล่อง</p>
+      <div class="field">
+        <label for="blockStylePicker">เลือกกล่อง</label>
+        <select id="blockStylePicker"></select>
+      </div>
+      <div class="style-color-grid" id="blockStyleFields"></div>
+      <button type="button" class="btn btn-ghost" id="btnResetBlockStyle" style="width:100%;margin-bottom:0.4rem">รีเซ็ตกล่องนี้</button>
       <div class="edit-actions">
         <button type="button" class="btn btn-ghost" id="btnCancelSettings">ปิด</button>
         <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
@@ -848,7 +827,8 @@
     let dragState = null;
     let pendingTplConfirm = null;
     let exHistoryPeriodDays = 7;
-    let editingBlockStyleId = null;
+    let editingBlockStyleId = 'summary';
+    let blockStyleDraft = null;
 
     const $ = (s) => document.querySelector(s);
 
@@ -872,10 +852,8 @@
       exerciseHistoryOverlay: $('#exerciseHistoryOverlay'), exHistoryPeriodBtns: $('#exHistoryPeriodBtns'),
       exHistoryTable: $('#exHistoryTable'), exHistoryBody: $('#exHistoryBody'), exHistoryEmpty: $('#exHistoryEmpty'),
       btnCloseExHistory: $('#btnCloseExHistory'), btnSaveExHistory: $('#btnSaveExHistory'),
-      blockStyleOverlay: $('#blockStyleOverlay'), blockStyleTitle: $('#blockStyleTitle'),
-      blockStyleFields: $('#blockStyleFields'),
-      btnResetBlockStyle: $('#btnResetBlockStyle'), btnCancelBlockStyle: $('#btnCancelBlockStyle'),
-      btnSaveBlockStyle: $('#btnSaveBlockStyle'),
+      blockStylePicker: $('#blockStylePicker'), blockStyleFields: $('#blockStyleFields'),
+      btnResetBlockStyle: $('#btnResetBlockStyle'),
       mealInput: $('#mealInput'), mealTime: $('#mealTime'), btnAddMeal: $('#btnAddMeal'),
       mealList: $('#mealList'), mealCount: $('#mealCount'), emptyMeals: $('#emptyMeals'),
       templateChips: $('#templateChips'),
@@ -1932,8 +1910,19 @@
         const el = els.blocksContainer.querySelector('[data-block-id="' + id + '"]');
         if (el) els.blocksContainer.appendChild(el);
       });
-      initBlockStyleButtons();
       applyBlockStyles();
+    }
+
+    function populateBlockStylePicker() {
+      const cur = els.blockStylePicker.value;
+      els.blockStylePicker.innerHTML = '';
+      DEFAULT_BLOCK_ORDER.forEach((id) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = BLOCK_LABELS[id] || id;
+        els.blockStylePicker.appendChild(opt);
+      });
+      els.blockStylePicker.value = cur && DEFAULT_BLOCK_ORDER.includes(cur) ? cur : 'summary';
     }
 
     function getBlockStyleFields(blockId) {
@@ -1957,27 +1946,16 @@
       });
     }
 
-    function initBlockStyleButtons() {
-      els.blocksContainer.querySelectorAll('.sortable-block').forEach((block) => {
-        if (block.querySelector('.block-style-btn')) return;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'block-style-btn';
-        btn.title = 'ปรับสีกล่อง';
-        btn.textContent = '⚙';
-        btn.dataset.blockId = block.dataset.blockId;
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          openBlockStyle(block.dataset.blockId);
-        });
-        block.appendChild(btn);
-      });
+    function flushBlockStyleDraft() {
+      if (!editingBlockStyleId || !blockStyleDraft) return;
+      const next = readBlockStyleEditor();
+      if (Object.keys(next).length) blockStyleDraft[editingBlockStyleId] = next;
+      else delete blockStyleDraft[editingBlockStyleId];
     }
 
-    function openBlockStyle(blockId) {
+    function renderBlockStyleFields(blockId) {
       editingBlockStyleId = blockId;
-      const saved = (loadSettings().blockStyles || {})[blockId] || {};
-      els.blockStyleTitle.textContent = 'ปรับสี — ' + (BLOCK_LABELS[blockId] || blockId);
+      const saved = (blockStyleDraft || {})[blockId] || {};
       els.blockStyleFields.innerHTML = '';
       getBlockStyleFields(blockId).forEach(({ key, label }) => {
         const wrap = document.createElement('div');
@@ -1996,7 +1974,6 @@
         wrap.append(lab, inp, clr);
         els.blockStyleFields.appendChild(wrap);
       });
-      els.blockStyleOverlay.classList.add('open');
     }
 
     function readBlockStyleEditor() {
@@ -2009,31 +1986,10 @@
       return out;
     }
 
-    function saveBlockStyle() {
-      if (!editingBlockStyleId) return;
-      const all = { ...(loadSettings().blockStyles || {}) };
-      const next = readBlockStyleEditor();
-      if (Object.keys(next).length) all[editingBlockStyleId] = next;
-      else delete all[editingBlockStyleId];
-      saveSettings({ blockStyles: all });
-      closeBlockStyle();
-      applyBlockStyles();
-      showToast('บันทึกสีกล่องแล้ว', 'success');
-    }
-
     function resetBlockStyle() {
-      if (!editingBlockStyleId) return;
-      const all = { ...(loadSettings().blockStyles || {}) };
-      delete all[editingBlockStyleId];
-      saveSettings({ blockStyles: all });
-      closeBlockStyle();
-      applyBlockStyles();
-      showToast('รีเซ็ตสีกล่องแล้ว', 'success');
-    }
-
-    function closeBlockStyle() {
-      editingBlockStyleId = null;
-      els.blockStyleOverlay.classList.remove('open');
+      if (!editingBlockStyleId || !blockStyleDraft) return;
+      delete blockStyleDraft[editingBlockStyleId];
+      renderBlockStyleFields(editingBlockStyleId);
     }
 
     function initDragReorder() {
@@ -2266,9 +2222,16 @@
       els.proteinMultiplier.value = loadSettings().proteinMultiplier;
       renderTemplateEditor();
       renderExerciseTemplateEditor();
+      blockStyleDraft = JSON.parse(JSON.stringify(loadSettings().blockStyles || {}));
+      populateBlockStylePicker();
+      editingBlockStyleId = els.blockStylePicker.value;
+      renderBlockStyleFields(editingBlockStyleId);
       els.settingsOverlay.classList.add('open');
     }
-    function closeSettings() { els.settingsOverlay.classList.remove('open'); }
+    function closeSettings() {
+      blockStyleDraft = null;
+      els.settingsOverlay.classList.remove('open');
+    }
     function saveAllSettings() {
       const mult = parseFloat(els.proteinMultiplier.value);
       if (isNaN(mult) || mult < 0.5 || mult > 3) { showToast('ตัวคูณ 0.5–3.0', 'error'); return; }
@@ -2291,7 +2254,10 @@
         }
         partial.exerciseTemplates = exTpl;
       }
+      flushBlockStyleDraft();
+      partial.blockStyles = blockStyleDraft || {};
       saveSettings(partial);
+      blockStyleDraft = null;
       closeSettings(); refresh();
     }
 
@@ -2572,10 +2538,11 @@
       if (del) { const tr = del.closest('tr'); tr.dataset.deleted = '1'; tr.style.opacity = '0.35'; }
     };
 
-    els.btnSaveBlockStyle.onclick = saveBlockStyle;
-    els.btnCancelBlockStyle.onclick = closeBlockStyle;
     els.btnResetBlockStyle.onclick = resetBlockStyle;
-    els.blockStyleOverlay.onclick = (e) => { if (e.target === els.blockStyleOverlay) closeBlockStyle(); };
+    els.blockStylePicker.onchange = () => {
+      flushBlockStyleDraft();
+      renderBlockStyleFields(els.blockStylePicker.value);
+    };
     els.blockStyleFields.onclick = (e) => {
       const clr = e.target.closest('.btn-clear-style');
       if (!clr) return;
