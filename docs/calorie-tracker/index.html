@@ -369,6 +369,8 @@
     }
     .data-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .data-actions .btn { flex: 1; min-width: 0; text-align: center; font-size: 0.75rem; padding: 0.45rem; }
+    .cloud-sync-line { font-size: 0.68rem; margin-bottom: 0.4rem; line-height: 1.35; }
+    .btn-sm.cloud-on { color: var(--success); border-color: rgba(74,222,128,0.35); }
 
     .edit-overlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -417,6 +419,7 @@
     <div class="top-bar">
       <h1>Calorie & Protein</h1>
       <div class="top-actions">
+        <button type="button" class="btn-sm" id="btnCloudTop" title="ซิงก์ Google Drive">☁️</button>
         <button type="button" class="btn-sm" id="btnTheme">☀️</button>
         <button type="button" class="btn-sm" id="btnSettings">⚙️</button>
       </div>
@@ -594,6 +597,12 @@
             <span class="chevron">▼</span>
           </div>
           <div class="section-body" style="margin-top:0.5rem">
+            <p class="hint cloud-sync-line" id="cloudSyncStatus">คลาวด์: ยังไม่ล็อกอิน — ข้อมูลอยู่ในเครื่อง</p>
+            <div class="data-actions" style="margin-bottom:0.4rem">
+              <button type="button" class="btn btn-ghost" id="btnCloudLogin">🔐 เข้าสู่ระบบ Google</button>
+              <button type="button" class="btn btn-ghost" id="btnCloudSyncNow" style="display:none">↻ ซิงก์</button>
+              <button type="button" class="btn btn-ghost" id="btnCloudLogout" style="display:none">ออก</button>
+            </div>
             <p class="hint" id="autoBackupStatus" style="margin-bottom:0.4rem">สำรองอัตโนมัติ: ปิด — ตั้งไฟล์ครั้งเดียว ทับไฟล์เดิมทุกครั้งที่มีการเปลี่ยนแปลง</p>
             <div class="data-actions">
               <button type="button" class="btn btn-ghost" id="btnAutoBackup">📁 ตั้งไฟล์สำรอง</button>
@@ -672,6 +681,11 @@
   <div class="edit-overlay" id="settingsOverlay">
     <div class="edit-sheet">
       <h3>ตั้งค่า</h3>
+      <div class="field">
+        <label for="settingsGoogleClientId">Google OAuth Client ID</label>
+        <input type="text" id="settingsGoogleClientId" placeholder="จาก Google Cloud Console" autocomplete="off" spellcheck="false">
+        <p class="hint">ล็อกอิน Gmail + ซิงก์ไฟล์ JSON บน Drive · ครั้งแรกจะผูกอีเมลเจ้าของแอป</p>
+      </div>
       <p class="sheet-desc">ข้อมูลส่วนตัว</p>
       <div class="field">
         <label for="settingsBirthDate">🎂 วันเกิด</label>
@@ -780,6 +794,7 @@
     const WAIST_ANOMALY_CM = 3;
     const BACKUP_FILENAME = 'calorie-tracker-backup.json';
     const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
+    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -837,6 +852,12 @@
     let chartPeriodDays = 30;
     let backupFileHandle = null;
     let backupDebounceTimer = null;
+    let driveSyncDebounceTimer = null;
+    let googleAccessToken = null;
+    let googleTokenClient = null;
+    let pendingTokenResolve = null;
+    let pendingTokenReject = null;
+    let gsiScriptPromise = null;
 
     const DEFAULT_TEMPLATES = [
       { id: 't1', label: 'ไข่ 2ฟอง', calories: 140, protein: 12 },
@@ -901,12 +922,15 @@
       btnSaveWeightHistory: $('#btnSaveWeightHistory'),
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
       settingsBirthDate: $('#settingsBirthDate'), settingsAgeHint: $('#settingsAgeHint'),
+      settingsGoogleClientId: $('#settingsGoogleClientId'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
       exerciseTemplateEditor: $('#exerciseTemplateEditor'), btnAddExTemplate: $('#btnAddExTemplate'),
       btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
       btnAutoBackup: $('#btnAutoBackup'), autoBackupStatus: $('#autoBackupStatus'),
+      cloudSyncStatus: $('#cloudSyncStatus'), btnCloudLogin: $('#btnCloudLogin'),
+      btnCloudSyncNow: $('#btnCloudSyncNow'), btnCloudLogout: $('#btnCloudLogout'), btnCloudTop: $('#btnCloudTop'),
       btnQuickTemplate: $('#btnQuickTemplate'),
       quickTemplateOverlay: $('#quickTemplateOverlay'),
       quickTemplateName: $('#quickTemplateName'), quickTemplateVal: $('#quickTemplateVal'),
@@ -1008,6 +1032,11 @@
         chartPeriodDays: 30,
         lastCompensationPct: 0,
         programStartDate: '',
+        googleClientId: '',
+        syncOwnerEmail: '',
+        driveFileId: '',
+        cloudSessionActive: false,
+        lastCloudSyncAt: '',
         blockStyles: {},
         templates: loadTemplateList(),
         exerciseTemplates: loadExerciseTemplateList(),
@@ -1030,6 +1059,11 @@
           chartPeriodDays: s.chartPeriodDays || 30,
           lastCompensationPct: parseFloat(s.lastCompensationPct) || 0,
           programStartDate: s.programStartDate || '',
+          googleClientId: s.googleClientId || '',
+          syncOwnerEmail: s.syncOwnerEmail || '',
+          driveFileId: s.driveFileId || '',
+          cloudSessionActive: !!s.cloudSessionActive,
+          lastCloudSyncAt: s.lastCloudSyncAt || '',
           blockStyles: s.blockStyles && typeof s.blockStyles === 'object' ? s.blockStyles : {},
           templates: loadTemplateList(),
           exerciseTemplates: loadExerciseTemplateList(),
@@ -2309,6 +2343,7 @@
       els.settingsBirthDate.value = birthDate;
       els.settingsBirthDate.max = todayStr();
       els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
+      els.settingsGoogleClientId.value = loadSettings().googleClientId || '';
       renderTemplateEditor();
       renderExerciseTemplateEditor();
       blockStyleDraft = JSON.parse(JSON.stringify(loadSettings().blockStyles || {}));
@@ -2355,6 +2390,7 @@
         birthDate: birthDate || '',
       };
       if (birthDate) partial.profile.age = String(calcAgeFromBirthDate(birthDate, todayStr()) || '');
+      partial.googleClientId = (els.settingsGoogleClientId.value || '').trim();
       saveSettings(partial);
       blockStyleDraft = null;
       closeSettings(); refresh();
@@ -2374,6 +2410,297 @@
         if (k?.startsWith(STORAGE_PREFIX)) payload.data[k] = localStorage.getItem(k);
       }
       return payload;
+    }
+
+    function buildExportJson(compact) {
+      const payload = buildExportPayload();
+      return compact ? JSON.stringify(payload) : JSON.stringify(payload, null, 2);
+    }
+
+    function estimatePayloadKb() {
+      return Math.round(buildExportJson(true).length / 1024);
+    }
+
+    function getGoogleClientId() {
+      return (loadSettings().googleClientId || '').trim();
+    }
+
+    function loadGsiScript() {
+      if (window.google?.accounts?.oauth2) return Promise.resolve();
+      if (gsiScriptPromise) return gsiScriptPromise;
+      gsiScriptPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://accounts.google.com/gsi/client';
+        s.async = true;
+        s.defer = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('gsi_load'));
+        document.head.appendChild(s);
+      });
+      return gsiScriptPromise;
+    }
+
+    function requestGoogleToken(prompt) {
+      return new Promise(async (resolve, reject) => {
+        const clientId = getGoogleClientId();
+        if (!clientId) { reject(new Error('no_client_id')); return; }
+        try { await loadGsiScript(); } catch { reject(new Error('gsi_load')); return; }
+        pendingTokenResolve = resolve;
+        pendingTokenReject = reject;
+        if (!googleTokenClient) {
+          googleTokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: DRIVE_SCOPE,
+            callback: (resp) => {
+              if (resp.error) {
+                pendingTokenReject?.(new Error(resp.error));
+              } else {
+                googleAccessToken = resp.access_token;
+                pendingTokenResolve?.(resp.access_token);
+              }
+              pendingTokenResolve = pendingTokenReject = null;
+            },
+          });
+        }
+        googleTokenClient.requestAccessToken({ prompt: prompt || '' });
+      });
+    }
+
+    async function fetchGoogleEmail(token) {
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      if (!res.ok) throw new Error('userinfo');
+      const j = await res.json();
+      if (!j.email) throw new Error('no_email');
+      return j.email;
+    }
+
+    function assertOwnerEmail(email) {
+      const owner = (loadSettings().syncOwnerEmail || '').trim().toLowerCase();
+      if (owner && owner !== email.trim().toLowerCase()) throw new Error('not_allowed');
+    }
+
+    async function driveApi(path, options) {
+      const res = await fetch('https://www.googleapis.com' + path, {
+        ...options,
+        headers: { Authorization: 'Bearer ' + googleAccessToken, ...(options.headers || {}) },
+      });
+      if (!res.ok) throw new Error('drive_' + res.status);
+      return res;
+    }
+
+    async function resolveDriveFileId() {
+      const saved = loadSettings().driveFileId;
+      if (saved) {
+        try {
+          const res = await driveApi('/drive/v3/files/' + encodeURIComponent(saved) + '?fields=id,trashed');
+          const j = await res.json();
+          if (!j.trashed) return j.id;
+        } catch { /* search by name */ }
+      }
+      const q = encodeURIComponent("name='" + BACKUP_FILENAME + "' and trashed=false");
+      const res = await driveApi('/drive/v3/files?q=' + q + '&fields=files(id,modifiedTime)&spaces=drive');
+      const j = await res.json();
+      const files = j.files || [];
+      if (!files.length) return null;
+      files.sort((a, b) => (b.modifiedTime || '').localeCompare(a.modifiedTime || ''));
+      return files[0].id;
+    }
+
+    async function uploadDriveJson(fileId, jsonStr) {
+      if (!fileId) {
+        const boundary = '-------caltracker' + Date.now();
+        const meta = JSON.stringify({ name: BACKUP_FILENAME, mimeType: 'application/json' });
+        const body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'
+          + meta + '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n'
+          + jsonStr + '\r\n--' + boundary + '--';
+        const res = await driveApi('/upload/drive/v3/files?uploadType=multipart&fields=id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'multipart/related; boundary=' + boundary },
+          body,
+        });
+        const j = await res.json();
+        return j.id;
+      }
+      await driveApi('/upload/drive/v3/files/' + encodeURIComponent(fileId) + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonStr,
+      });
+      return fileId;
+    }
+
+    async function downloadDriveJson(fileId) {
+      const res = await driveApi('/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media');
+      return res.text();
+    }
+
+    function applyImportPayload(payload, opts) {
+      const data = payload.data || payload;
+      let n = 0;
+      Object.keys(data).forEach((k) => {
+        if (k.startsWith(STORAGE_PREFIX)) {
+          localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k]));
+          n++;
+        }
+      });
+      runMigration();
+      applyBlockOrder();
+      migrateTemplateStores();
+      refresh();
+      if (!opts?.skipCloud) scheduleAutoBackup();
+      return n;
+    }
+
+    function formatSyncTime(iso) {
+      if (!iso) return '';
+      try {
+        return new Date(iso).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      } catch { return ''; }
+    }
+
+    function updateCloudSyncUI() {
+      const s = loadSettings();
+      const loggedIn = s.cloudSessionActive && s.syncOwnerEmail;
+      if (!getGoogleClientId()) {
+        els.cloudSyncStatus.textContent = 'คลาวด์: ใส่ Google OAuth Client ID ใน ⚙ Settings';
+        els.cloudSyncStatus.style.color = '';
+        els.btnCloudTop.classList.remove('cloud-on');
+      } else if (loggedIn) {
+        const t = formatSyncTime(s.lastCloudSyncAt);
+        els.cloudSyncStatus.textContent = 'คลาวด์: ' + s.syncOwnerEmail + ' · ~' + estimatePayloadKb() + ' KB'
+          + (t ? ' · ซิงก์ ' + t : '');
+        els.cloudSyncStatus.style.color = 'var(--success)';
+        els.btnCloudTop.classList.add('cloud-on');
+        els.btnCloudTop.title = 'ซิงก์แล้ว — ' + s.syncOwnerEmail;
+      } else {
+        els.cloudSyncStatus.textContent = 'คลาวด์: ยังไม่ล็อกอิน — ข้อมูลอยู่ในเครื่อง';
+        els.cloudSyncStatus.style.color = '';
+        els.btnCloudTop.classList.remove('cloud-on');
+        els.btnCloudTop.title = 'เข้าสู่ระบบ Google Drive';
+      }
+      els.btnCloudLogin.style.display = loggedIn ? 'none' : '';
+      els.btnCloudLogout.style.display = loggedIn ? '' : 'none';
+      els.btnCloudSyncNow.style.display = loggedIn ? '' : 'none';
+    }
+
+    async function syncWithDrive(preferPull) {
+      if (!googleAccessToken) throw new Error('no_token');
+      const localPayload = buildExportPayload();
+      const localJson = buildExportJson(true);
+      let fileId = await resolveDriveFileId();
+
+      if (!fileId) {
+        fileId = await uploadDriveJson(null, localJson);
+        saveSettings({ driveFileId: fileId, lastCloudSyncAt: localPayload.exportedAt });
+        return 'upload';
+      }
+
+      let remotePayload = null;
+      try {
+        remotePayload = JSON.parse(await downloadDriveJson(fileId));
+      } catch { remotePayload = null; }
+
+      if (!remotePayload?.data) {
+        await uploadDriveJson(fileId, localJson);
+        saveSettings({ driveFileId: fileId, lastCloudSyncAt: localPayload.exportedAt });
+        return 'upload';
+      }
+
+      const localTs = Date.parse(localPayload.exportedAt) || 0;
+      const remoteTs = Date.parse(remotePayload.exportedAt) || 0;
+
+      if (preferPull || remoteTs > localTs) {
+        applyImportPayload(remotePayload, { skipCloud: true });
+        saveSettings({ driveFileId: fileId, lastCloudSyncAt: remotePayload.exportedAt });
+        return 'download';
+      }
+      if (localTs >= remoteTs) {
+        await uploadDriveJson(fileId, localJson);
+        saveSettings({ driveFileId: fileId, lastCloudSyncAt: localPayload.exportedAt });
+        return 'upload';
+      }
+      return 'noop';
+    }
+
+    function scheduleDriveSync() {
+      if (!loadSettings().cloudSessionActive || !getGoogleClientId()) return;
+      clearTimeout(driveSyncDebounceTimer);
+      driveSyncDebounceTimer = setTimeout(async () => {
+        try {
+          if (!googleAccessToken) await requestGoogleToken('');
+          await syncWithDrive(false);
+          updateCloudSyncUI();
+        } catch { /* silent — ล็อกอินใหม่เมื่อ token หมด */ }
+      }, 2200);
+    }
+
+    async function loginCloud() {
+      if (!getGoogleClientId()) {
+        showToast('ใส่ Google OAuth Client ID ใน Settings ก่อน', 'error');
+        openSettings();
+        return;
+      }
+      try {
+        const silent = !!loadSettings().cloudSessionActive;
+        const token = await requestGoogleToken(silent ? '' : 'select_account');
+        const email = await fetchGoogleEmail(token);
+        assertOwnerEmail(email);
+        const owner = loadSettings().syncOwnerEmail;
+        saveSettings({
+          syncOwnerEmail: owner || email,
+          cloudSessionActive: true,
+        });
+        const result = await syncWithDrive(true);
+        updateCloudSyncUI();
+        showToast(
+          result === 'download' ? 'ดึงข้อมูลจาก Drive แล้ว' : 'ซิงก์ Drive แล้ว',
+          'success'
+        );
+      } catch (e) {
+        if (e.message === 'not_allowed') showToast('อีเมลนี้ไม่ได้รับอนุญาต', 'error');
+        else if (e.message === 'no_client_id') showToast('ใส่ Client ID ใน Settings', 'error');
+        else showToast('เข้าสู่ระบบไม่สำเร็จ', 'error');
+      }
+    }
+
+    async function syncCloudNow() {
+      try {
+        if (!googleAccessToken) await requestGoogleToken('');
+        const email = await fetchGoogleEmail(googleAccessToken);
+        assertOwnerEmail(email);
+        const result = await syncWithDrive(false);
+        updateCloudSyncUI();
+        showToast(result === 'download' ? 'ดึงจาก Drive' : 'อัปโหลด Drive', 'success');
+      } catch (e) {
+        if (e.message === 'not_allowed') showToast('อีเมลไม่ตรง', 'error');
+        else showToast('ซิงก์ไม่สำเร็จ — ล็อกอินใหม่', 'error');
+      }
+    }
+
+    function logoutCloud() {
+      if (googleAccessToken && window.google?.accounts?.oauth2?.revoke) {
+        try { google.accounts.oauth2.revoke(googleAccessToken, () => {}); } catch { /* ignore */ }
+      }
+      googleAccessToken = null;
+      saveSettings({ cloudSessionActive: false });
+      updateCloudSyncUI();
+      showToast('ออกจากระบบคลาวด์แล้ว — ข้อมูลยังอยู่ในเครื่อง', 'success');
+    }
+
+    async function initCloudOnLoad() {
+      updateCloudSyncUI();
+      if (!getGoogleClientId() || !loadSettings().cloudSessionActive) return;
+      try {
+        await requestGoogleToken('');
+        const email = await fetchGoogleEmail(googleAccessToken);
+        assertOwnerEmail(email);
+        await syncWithDrive(true);
+        updateCloudSyncUI();
+      } catch {
+        updateCloudSyncUI();
+      }
     }
 
     function openBackupDB() {
@@ -2430,17 +2757,21 @@
     }
 
     function scheduleAutoBackup() {
-      if (!backupFileHandle) return;
       clearTimeout(backupDebounceTimer);
-      backupDebounceTimer = setTimeout(async () => {
-        try {
-          await writeBackupToHandle(backupFileHandle);
-        } catch {
-          backupFileHandle = null;
-          updateAutoBackupStatus();
-          showToast('สำรองอัตโนมัติล้มเหลว — ตั้งไฟล์ใหม่', 'error');
-        }
-      }, 1200);
+      if (backupFileHandle) {
+        backupDebounceTimer = setTimeout(async () => {
+          try {
+            await writeBackupToHandle(backupFileHandle);
+          } catch {
+            backupFileHandle = null;
+            updateAutoBackupStatus();
+            showToast('สำรองอัตโนมัติล้มเหลว — ตั้งไฟล์ใหม่', 'error');
+          }
+          scheduleDriveSync();
+        }, 1200);
+      } else {
+        scheduleDriveSync();
+      }
     }
 
     async function setupAutoBackup() {
@@ -2467,9 +2798,8 @@
     }
 
     function exportData() {
-      const payload = buildExportPayload();
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+      a.href = URL.createObjectURL(new Blob([buildExportJson(false)], { type: 'application/json' }));
       a.download = BACKUP_FILENAME;
       a.click();
       URL.revokeObjectURL(a.href);
@@ -2481,14 +2811,7 @@
       reader.onload = () => {
         try {
           const payload = JSON.parse(reader.result);
-          const data = payload.data || payload;
-          let n = 0;
-          Object.keys(data).forEach((k) => {
-            if (k.startsWith(STORAGE_PREFIX)) { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); n++; }
-          });
-          runMigration(); applyBlockOrder(); refresh();
-          migrateTemplateStores();
-          scheduleAutoBackup();
+          const n = applyImportPayload(payload);
           showToast('Import ' + n + ' รายการ', 'success');
         } catch { showToast('ไฟล์ไม่ถูกต้อง', 'error'); }
       };
@@ -2647,6 +2970,14 @@
       if (inp) inp.value = getThemeColorDefault(clr.dataset.styleKey);
     };
 
+    els.btnCloudLogin.onclick = loginCloud;
+    els.btnCloudTop.onclick = () => {
+      if (loadSettings().cloudSessionActive) syncCloudNow();
+      else loginCloud();
+    };
+    els.btnCloudSyncNow.onclick = syncCloudNow;
+    els.btnCloudLogout.onclick = logoutCloud;
+
     els.btnSettings.onclick = openSettings;
     els.profileAgeDisplay.onclick = openSettings;
     els.btnCancelSettings.onclick = closeSettings;
@@ -2682,6 +3013,7 @@
     applyBlockOrder();
     initDragReorder();
     initAutoBackup();
+    initCloudOnLoad();
     setChartPeriod(loadSettings().chartPeriodDays || 30);
     els.mealTime.value = nowTimeStr();
     els.exerciseTime.value = nowTimeStr();
