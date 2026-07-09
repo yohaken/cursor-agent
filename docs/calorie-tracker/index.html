@@ -906,7 +906,7 @@
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
     const EMAIL_SCOPE = 'openid email profile';
     const OAUTH_SCOPES = DRIVE_SCOPE + ' ' + EMAIL_SCOPE;
-    const APP_VERSION = '2026.07.09-client-id';
+    const APP_VERSION = '2026.07.09-driveapi-fix';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -2715,7 +2715,7 @@
       if (owner && owner !== email.trim().toLowerCase()) throw new Error('not_allowed');
     }
 
-    async function driveApi(path, options) {
+    async function driveApi(path, options = {}) {
       const res = await fetch('https://www.googleapis.com' + path, {
         ...options,
         headers: { Authorization: 'Bearer ' + googleAccessToken, ...(options.headers || {}) },
