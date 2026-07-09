@@ -369,8 +369,29 @@
     }
     .data-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .data-actions .btn { flex: 1; min-width: 0; text-align: center; font-size: 0.75rem; padding: 0.45rem; }
-    .cloud-sync-line { font-size: 0.68rem; margin-bottom: 0.4rem; line-height: 1.35; }
+    .cloud-status-row {
+      display: flex; align-items: flex-start; gap: 0.45rem; margin-bottom: 0.45rem;
+    }
+    .cloud-status-badge {
+      flex-shrink: 0; font-size: 0.6rem; font-weight: 700; padding: 0.22rem 0.5rem;
+      border-radius: 999px; line-height: 1.25; letter-spacing: 0.01em;
+    }
+    .cloud-status-badge.off { background: var(--surface-2); color: var(--muted); }
+    .cloud-status-badge.wait { background: rgba(251,191,36,0.16); color: #fbbf24; }
+    .cloud-status-badge.ok { background: rgba(74,222,128,0.16); color: var(--success); }
+    .cloud-status-badge.err { background: rgba(248,113,113,0.16); color: var(--danger); }
+    .cloud-status-detail {
+      font-size: 0.68rem; line-height: 1.4; color: var(--muted); flex: 1; min-width: 0; margin: 0;
+    }
+    .cloud-status-detail.ok { color: var(--success); }
+    .cloud-settings-status { margin-top: 0.35rem; font-size: 0.66rem; }
     .btn-sm.cloud-on { color: var(--success); border-color: rgba(74,222,128,0.35); }
+    .btn-sm.cloud-busy {
+      color: #fbbf24; border-color: rgba(251,191,36,0.35);
+      display: inline-flex; align-items: center; justify-content: center;
+      animation: cloud-spin 0.85s linear infinite;
+    }
+    @keyframes cloud-spin { to { transform: rotate(360deg); } }
 
     .edit-overlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -620,7 +641,10 @@
             <span class="chevron">▼</span>
           </div>
           <div class="section-body" style="margin-top:0.5rem">
-            <p class="hint cloud-sync-line" id="cloudSyncStatus">คลาวด์: ยังไม่ล็อกอิน — ข้อมูลอยู่ในเครื่อง</p>
+            <div class="cloud-status-row" id="cloudStatusRow">
+              <span class="cloud-status-badge off" id="cloudStatusBadge">ยังไม่เชื่อมต่อ</span>
+              <p class="cloud-status-detail" id="cloudSyncStatus">ข้อมูลอยู่ในเครื่อง — ล็อกอิน Google เพื่อซิงก์ Drive</p>
+            </div>
             <div class="data-actions" style="margin-bottom:0.4rem">
               <button type="button" class="btn btn-ghost" id="btnCloudLogin">🔐 เข้าสู่ระบบ Google</button>
               <button type="button" class="btn btn-ghost" id="btnCloudSyncNow" style="display:none">↻ ซิงก์</button>
@@ -713,6 +737,7 @@
           <label for="settingsGoogleClientId">Google OAuth Client ID</label>
           <input type="text" id="settingsGoogleClientId" placeholder="วาง Client ID จาก Google Cloud" autocomplete="off" spellcheck="false">
           <p class="hint">ล็อกอิน Gmail + ซิงก์ JSON บน Drive · ครั้งแรกผูกอีเมลเจ้าของ</p>
+          <p class="hint cloud-settings-status" id="settingsCloudStatus">สถานะ: ยังไม่เชื่อมต่อ</p>
         </div>
         <p class="sheet-section-label">ข้อมูลส่วนตัว</p>
         <div class="field">
@@ -825,7 +850,7 @@
     const BACKUP_FILENAME = 'calorie-tracker-backup.json';
     const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-    const APP_VERSION = '2026.07.09-drive';
+    const APP_VERSION = '2026.07.09-cloud-status';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -886,6 +911,8 @@
     let driveSyncDebounceTimer = null;
     let googleAccessToken = null;
     let googleTokenClient = null;
+    let cloudUiPhase = 'idle';
+    let cloudUiError = '';
     let pendingTokenResolve = null;
     let pendingTokenReject = null;
     let gsiScriptPromise = null;
@@ -961,7 +988,9 @@
       btnCancelSettings: $('#btnCancelSettings'), btnSaveSettings: $('#btnSaveSettings'),
       btnExport: $('#btnExport'), btnImport: $('#btnImport'), importFile: $('#importFile'),
       btnAutoBackup: $('#btnAutoBackup'), autoBackupStatus: $('#autoBackupStatus'),
-      cloudSyncStatus: $('#cloudSyncStatus'), btnCloudLogin: $('#btnCloudLogin'),
+      cloudStatusBadge: $('#cloudStatusBadge'), cloudSyncStatus: $('#cloudSyncStatus'),
+      settingsCloudStatus: $('#settingsCloudStatus'),
+      btnCloudLogin: $('#btnCloudLogin'),
       btnCloudSyncNow: $('#btnCloudSyncNow'), btnCloudLogout: $('#btnCloudLogout'), btnCloudTop: $('#btnCloudTop'),
       btnQuickTemplate: $('#btnQuickTemplate'),
       quickTemplateOverlay: $('#quickTemplateOverlay'),
@@ -1069,6 +1098,7 @@
         driveFileId: '',
         cloudSessionActive: false,
         lastCloudSyncAt: '',
+        lastCloudConnectAt: '',
         blockStyles: {},
         templates: loadTemplateList(),
         exerciseTemplates: loadExerciseTemplateList(),
@@ -1096,6 +1126,7 @@
           driveFileId: s.driveFileId || '',
           cloudSessionActive: !!s.cloudSessionActive,
           lastCloudSyncAt: s.lastCloudSyncAt || '',
+          lastCloudConnectAt: s.lastCloudConnectAt || '',
           blockStyles: s.blockStyles && typeof s.blockStyles === 'object' ? s.blockStyles : {},
           templates: loadTemplateList(),
           exerciseTemplates: loadExerciseTemplateList(),
@@ -2376,6 +2407,7 @@
       els.settingsBirthDate.max = todayStr();
       els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
       els.settingsGoogleClientId.value = loadSettings().googleClientId || '';
+      updateCloudSyncUI();
       if (els.appVersionTag) els.appVersionTag.textContent = '· ' + APP_VERSION;
       renderTemplateEditor();
       renderExerciseTemplateEditor();
@@ -2594,29 +2626,87 @@
       } catch { return ''; }
     }
 
+    function cloudErrorMessage(err) {
+      const code = err?.message || '';
+      if (code === 'not_allowed') return 'อีเมลนี้ไม่ได้รับอนุญาต (ไม่ตรงเจ้าของบัญชี)';
+      if (code === 'no_client_id') return 'ยังไม่ได้ใส่ Client ID ใน Settings';
+      if (code === 'no_token') return 'เซสชันหมดอายุ — ล็อกอินใหม่';
+      return 'ตรวจ Client ID, Test user ใน Google Cloud แล้วลองใหม่';
+    }
+
+    function setCloudPhase(phase, errMsg) {
+      cloudUiPhase = phase;
+      cloudUiError = errMsg || '';
+      updateCloudSyncUI();
+    }
+
     function updateCloudSyncUI() {
       const s = loadSettings();
+      const hasClient = !!getGoogleClientId();
       const loggedIn = s.cloudSessionActive && s.syncOwnerEmail;
-      if (!getGoogleClientId()) {
-        els.cloudSyncStatus.textContent = 'คลาวด์: ใส่ Google OAuth Client ID ใน ⚙ Settings';
-        els.cloudSyncStatus.style.color = '';
-        els.btnCloudTop.classList.remove('cloud-on');
+      const badge = els.cloudStatusBadge;
+      const detail = els.cloudSyncStatus;
+
+      if (cloudUiPhase === 'connecting') {
+        badge.textContent = 'กำลังเชื่อมต่อ...';
+        badge.className = 'cloud-status-badge wait';
+        detail.textContent = 'รอสักครู่ — กำลังล็อกอิน Google';
+        detail.className = 'cloud-status-detail';
+      } else if (cloudUiPhase === 'syncing') {
+        badge.textContent = 'กำลังซิงก์...';
+        badge.className = 'cloud-status-badge wait';
+        detail.textContent = 'อัปโหลด/ดึงข้อมูลจาก Google Drive';
+        detail.className = 'cloud-status-detail';
+      } else if (cloudUiPhase === 'error') {
+        badge.textContent = 'เชื่อมต่อไม่สำเร็จ';
+        badge.className = 'cloud-status-badge err';
+        detail.textContent = cloudUiError || 'ลองล็อกอินใหม่';
+        detail.className = 'cloud-status-detail';
+      } else if (!hasClient) {
+        badge.textContent = 'ยังไม่ตั้งค่า';
+        badge.className = 'cloud-status-badge off';
+        detail.textContent = 'ใส่ Google OAuth Client ID ใน ⚙ Settings ก่อน';
+        detail.className = 'cloud-status-detail';
       } else if (loggedIn) {
-        const t = formatSyncTime(s.lastCloudSyncAt);
-        els.cloudSyncStatus.textContent = 'คลาวด์: ' + s.syncOwnerEmail + ' · ~' + estimatePayloadKb() + ' KB'
-          + (t ? ' · ซิงก์ ' + t : '');
-        els.cloudSyncStatus.style.color = 'var(--success)';
-        els.btnCloudTop.classList.add('cloud-on');
-        els.btnCloudTop.title = 'ซิงก์แล้ว — ' + s.syncOwnerEmail;
+        badge.textContent = '✓ เชื่อมต่อแล้ว';
+        badge.className = 'cloud-status-badge ok';
+        const syncT = formatSyncTime(s.lastCloudSyncAt);
+        const connT = formatSyncTime(s.lastCloudConnectAt);
+        detail.textContent = s.syncOwnerEmail
+          + (connT ? ' · เชื่อมต่อ ' + connT : '')
+          + (syncT ? ' · ซิงก์ล่าสุด ' + syncT : ' · รอซิงก์ครั้งแรก')
+          + ' · ~' + estimatePayloadKb() + ' KB บน Drive';
+        detail.className = 'cloud-status-detail ok';
       } else {
-        els.cloudSyncStatus.textContent = 'คลาวด์: ยังไม่ล็อกอิน — ข้อมูลอยู่ในเครื่อง';
-        els.cloudSyncStatus.style.color = '';
-        els.btnCloudTop.classList.remove('cloud-on');
-        els.btnCloudTop.title = 'เข้าสู่ระบบ Google Drive';
+        badge.textContent = 'ยังไม่เชื่อมต่อ';
+        badge.className = 'cloud-status-badge off';
+        detail.textContent = 'ข้อมูลอยู่ในเครื่อง — กดเข้าสู่ระบบ Google เพื่อซิงก์ Drive';
+        detail.className = 'cloud-status-detail';
       }
+
+      const busy = cloudUiPhase === 'connecting' || cloudUiPhase === 'syncing';
+      els.btnCloudTop.textContent = busy ? '⟳' : '☁️';
+      els.btnCloudTop.classList.toggle('cloud-busy', busy);
+      els.btnCloudTop.classList.toggle('cloud-on', loggedIn && !busy && cloudUiPhase !== 'error');
+      if (busy) els.btnCloudTop.title = cloudUiPhase === 'connecting' ? 'กำลังเชื่อมต่อ...' : 'กำลังซิงก์...';
+      else if (loggedIn && cloudUiPhase !== 'error') els.btnCloudTop.title = 'เชื่อมต่อแล้ว — แตะเพื่อซิงก์';
+      else els.btnCloudTop.title = 'เข้าสู่ระบบ Google Drive';
+
       els.btnCloudLogin.style.display = loggedIn ? 'none' : '';
       els.btnCloudLogout.style.display = loggedIn ? '' : 'none';
       els.btnCloudSyncNow.style.display = loggedIn ? '' : 'none';
+
+      if (els.settingsCloudStatus) {
+        if (cloudUiPhase === 'connecting') els.settingsCloudStatus.textContent = 'สถานะ: กำลังเชื่อมต่อ...';
+        else if (cloudUiPhase === 'syncing') els.settingsCloudStatus.textContent = 'สถานะ: กำลังซิงก์ข้อมูล...';
+        else if (cloudUiPhase === 'error') els.settingsCloudStatus.textContent = 'สถานะ: เชื่อมต่อไม่สำเร็จ — ' + (cloudUiError || 'ลองใหม่');
+        else if (!hasClient) els.settingsCloudStatus.textContent = 'สถานะ: ยังไม่ตั้งค่า Client ID';
+        else if (loggedIn) {
+          const syncT = formatSyncTime(s.lastCloudSyncAt);
+          els.settingsCloudStatus.textContent = 'สถานะ: ✓ เชื่อมต่อแล้ว · ' + s.syncOwnerEmail
+            + (syncT ? ' · ซิงก์ ' + syncT : '');
+        } else els.settingsCloudStatus.textContent = 'สถานะ: ยังไม่เชื่อมต่อ — ล็อกอินที่หมวดสำรองข้อมูล';
+      }
     }
 
     async function syncWithDrive(preferPull) {
@@ -2664,9 +2754,12 @@
       driveSyncDebounceTimer = setTimeout(async () => {
         try {
           if (!googleAccessToken) await requestGoogleToken('');
+          setCloudPhase('syncing');
           await syncWithDrive(false);
-          updateCloudSyncUI();
-        } catch { /* silent — ล็อกอินใหม่เมื่อ token หมด */ }
+          setCloudPhase('connected');
+        } catch {
+          setCloudPhase('error', 'ซิงก์อัตโนมัติไม่สำเร็จ — ล็อกอินใหม่');
+        }
       }, 2200);
     }
 
@@ -2676,6 +2769,7 @@
         openSettings();
         return;
       }
+      setCloudPhase('connecting');
       try {
         const silent = !!loadSettings().cloudSessionActive;
         const token = await requestGoogleToken(silent ? '' : 'select_account');
@@ -2685,14 +2779,15 @@
         saveSettings({
           syncOwnerEmail: owner || email,
           cloudSessionActive: true,
+          lastCloudConnectAt: new Date().toISOString(),
         });
+        setCloudPhase('syncing');
         const result = await syncWithDrive(true);
-        updateCloudSyncUI();
-        showToast(
-          result === 'download' ? 'ดึงข้อมูลจาก Drive แล้ว' : 'ซิงก์ Drive แล้ว',
-          'success'
-        );
+        setCloudPhase('connected');
+        const syncMsg = result === 'download' ? 'ดึงข้อมูลจาก Drive แล้ว' : 'อัปโหลดขึ้น Drive แล้ว';
+        showToast('✓ เชื่อมต่อ Google Drive สำเร็จ — ' + syncMsg, 'success');
       } catch (e) {
+        setCloudPhase('error', cloudErrorMessage(e));
         if (e.message === 'not_allowed') showToast('อีเมลนี้ไม่ได้รับอนุญาต', 'error');
         else if (e.message === 'no_client_id') showToast('ใส่ Client ID ใน Settings', 'error');
         else showToast('เข้าสู่ระบบไม่สำเร็จ', 'error');
@@ -2700,14 +2795,21 @@
     }
 
     async function syncCloudNow() {
+      setCloudPhase('syncing');
       try {
         if (!googleAccessToken) await requestGoogleToken('');
         const email = await fetchGoogleEmail(googleAccessToken);
         assertOwnerEmail(email);
         const result = await syncWithDrive(false);
-        updateCloudSyncUI();
-        showToast(result === 'download' ? 'ดึงจาก Drive' : 'อัปโหลด Drive', 'success');
+        setCloudPhase('connected');
+        const t = formatSyncTime(loadSettings().lastCloudSyncAt);
+        showToast(
+          (result === 'download' ? 'ดึงจาก Drive แล้ว' : 'อัปโหลด Drive แล้ว')
+            + (t ? ' · ' + t : ''),
+          'success'
+        );
       } catch (e) {
+        setCloudPhase('error', cloudErrorMessage(e));
         if (e.message === 'not_allowed') showToast('อีเมลไม่ตรง', 'error');
         else showToast('ซิงก์ไม่สำเร็จ — ล็อกอินใหม่', 'error');
       }
@@ -2719,21 +2821,23 @@
       }
       googleAccessToken = null;
       saveSettings({ cloudSessionActive: false });
-      updateCloudSyncUI();
+      setCloudPhase('idle');
       showToast('ออกจากระบบคลาวด์แล้ว — ข้อมูลยังอยู่ในเครื่อง', 'success');
     }
 
     async function initCloudOnLoad() {
       updateCloudSyncUI();
       if (!getGoogleClientId() || !loadSettings().cloudSessionActive) return;
+      setCloudPhase('connecting');
       try {
         await requestGoogleToken('');
         const email = await fetchGoogleEmail(googleAccessToken);
         assertOwnerEmail(email);
+        setCloudPhase('syncing');
         await syncWithDrive(true);
-        updateCloudSyncUI();
+        setCloudPhase('connected');
       } catch {
-        updateCloudSyncUI();
+        setCloudPhase('idle');
       }
     }
 
