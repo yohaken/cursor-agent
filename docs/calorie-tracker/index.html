@@ -517,6 +517,7 @@
               <input type="number" id="profileWaist" inputmode="decimal" step="0.1" min="0">
             </div>
           </div>
+          <p class="hint" style="margin-top:0.2rem">น้ำหนัก/เอว = ค่าที่วัดล่าสุด · แก้ไขเมื่อวัดวันนี้</p>
           <button type="button" class="btn btn-ghost" id="btnWeightHistory" style="width:100%;font-size:0.75rem;margin-top:0.25rem">📋 แก้ไขประวัติน้ำหนัก & เอว</button>
           <div class="field" style="margin-top:0.45rem">
             <label for="programStartDate">📅 วันเริ่มโปรแกรม <button type="button" class="info-btn" data-info="start">ⓘ</button></label>
@@ -2064,19 +2065,18 @@
         return;
       }
       const profile = loadSettings().profile;
-      const weightLog = getWeightLog();
-      const waistLog = getWaistLog();
       const start = getProgramStartDate();
-      els.profileWeight.value = weightLog[currentDate] != null ? weightLog[currentDate] : '';
+      const w = getWeightOnDate(currentDate);
+      const wa = getWaistOnDate(currentDate);
+      els.profileWeight.value = w > 0 ? w : '';
       els.profileAge.value = profile.age;
-      els.profileWaist.value = waistLog[currentDate] != null ? waistLog[currentDate] : '';
+      els.profileWaist.value = wa > 0 ? wa : '';
       els.targetWeight.value = profile.targetWeight || '';
       els.targetWaist.value = profile.targetWaist || '';
       els.programStartDate.value = start || '';
       els.programStartDate.max = todayStr();
       els.datePicker.min = start || '';
       const data = loadDay(currentDate);
-      const w = getWeightOnDate(currentDate);
       renderMeals(data.meals);
       renderExercises(data.exercises);
       renderDashboard(calculate(data, w));
