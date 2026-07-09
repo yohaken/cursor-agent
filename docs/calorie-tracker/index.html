@@ -787,8 +787,9 @@
         <p class="sheet-section-label">☁️ Google Drive</p>
         <div class="field">
           <label for="settingsGoogleClientId">Google OAuth Client ID</label>
-          <input type="text" id="settingsGoogleClientId" placeholder="วาง Client ID จาก Google Cloud" autocomplete="off" spellcheck="false">
-          <p class="hint">ล็อกอิน Gmail + ซิงก์ JSON บน Drive · เปิด Drive API + เพิ่ม Test user ใน Google Cloud</p>
+          <input type="text" id="settingsGoogleClientId" placeholder="123456789-xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+          <p class="hint">จาก Google Cloud → OAuth Web Client · ลงท้าย .apps.googleusercontent.com</p>
+          <p class="hint" id="settingsClientIdHint">ยังไม่ได้บันทึก Client ID</p>
           <p class="hint cloud-settings-status" id="settingsCloudStatus">สถานะ: ยังไม่เชื่อมต่อ</p>
           <button type="button" class="btn btn-ghost" id="btnResetCloudSettings" style="width:100%;margin-top:0.35rem;font-size:0.72rem">รีเซ็ตการผูกบัญชี Google</button>
         </div>
@@ -905,7 +906,7 @@
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
     const EMAIL_SCOPE = 'openid email profile';
     const OAUTH_SCOPES = DRIVE_SCOPE + ' ' + EMAIL_SCOPE;
-    const APP_VERSION = '2026.07.09-session-clear';
+    const APP_VERSION = '2026.07.09-client-id';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -1037,6 +1038,7 @@
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
       settingsBirthDate: $('#settingsBirthDate'), settingsAgeHint: $('#settingsAgeHint'),
       settingsGoogleClientId: $('#settingsGoogleClientId'),
+      settingsClientIdHint: $('#settingsClientIdHint'),
       appVersionTag: $('#appVersionTag'), settingsScrollBody: $('#settingsScrollBody'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
       exerciseTemplateEditor: $('#exerciseTemplateEditor'), btnAddExTemplate: $('#btnAddExTemplate'),
@@ -2466,6 +2468,7 @@
       els.settingsBirthDate.max = todayStr();
       els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
       els.settingsGoogleClientId.value = loadSettings().googleClientId || '';
+      updateClientIdHint();
       updateCloudSyncUI();
       if (els.appVersionTag) els.appVersionTag.textContent = '· ' + APP_VERSION;
       renderTemplateEditor();
@@ -2515,7 +2518,11 @@
         birthDate: birthDate || '',
       };
       if (birthDate) partial.profile.age = String(calcAgeFromBirthDate(birthDate, todayStr()) || '');
-      partial.googleClientId = (els.settingsGoogleClientId.value || '').trim();
+      partial.googleClientId = readClientIdFromInput();
+      if (partial.googleClientId && !isValidGoogleClientId(partial.googleClientId)) {
+        showToast('Client ID ไม่ถูกต้อง — ต้องลงท้าย .apps.googleusercontent.com', 'error');
+        return;
+      }
       saveSettings(partial);
       blockStyleDraft = null;
       closeSettings(); refresh();
@@ -2546,8 +2553,61 @@
       return Math.round(buildExportJson(true).length / 1024);
     }
 
+    function isValidGoogleClientId(id) {
+      return /\.apps\.googleusercontent\.com$/i.test((id || '').trim());
+    }
+
+    function readClientIdFromInput() {
+      return (els.settingsGoogleClientId?.value || '').trim();
+    }
+
+    function resolveGoogleClientId(opts) {
+      const saved = (loadSettings().googleClientId || '').trim();
+      if (isValidGoogleClientId(saved)) return saved;
+      const fromInput = readClientIdFromInput();
+      if (isValidGoogleClientId(fromInput)) {
+        if (opts?.autoSave) saveSettings({ googleClientId: fromInput });
+        return fromInput;
+      }
+      return saved || fromInput || '';
+    }
+
+    function hasGoogleClientId() {
+      return isValidGoogleClientId(resolveGoogleClientId());
+    }
+
     function getGoogleClientId() {
-      return (loadSettings().googleClientId || '').trim();
+      const id = resolveGoogleClientId({ autoSave: true });
+      return isValidGoogleClientId(id) ? id : '';
+    }
+
+    function updateClientIdHint() {
+      if (!els.settingsClientIdHint) return;
+      const saved = (loadSettings().googleClientId || '').trim();
+      const input = readClientIdFromInput();
+      if (isValidGoogleClientId(saved)) {
+        els.settingsClientIdHint.textContent = '✓ บันทึก Client ID แล้ว';
+        els.settingsClientIdHint.style.color = 'var(--success)';
+      } else if (isValidGoogleClientId(input)) {
+        els.settingsClientIdHint.textContent = 'กด「บันทึก」ด้านล่างเพื่อเก็บ Client ID';
+        els.settingsClientIdHint.style.color = '#fbbf24';
+      } else if (input) {
+        els.settingsClientIdHint.textContent = 'รูปแบบไม่ถูก — ต้องลงท้าย .apps.googleusercontent.com';
+        els.settingsClientIdHint.style.color = 'var(--danger)';
+      } else {
+        els.settingsClientIdHint.textContent = 'ยังไม่ได้ใส่ Client ID';
+        els.settingsClientIdHint.style.color = 'var(--muted)';
+      }
+    }
+
+    function persistClientIdFromInput() {
+      const id = readClientIdFromInput();
+      if (!id) return false;
+      if (!isValidGoogleClientId(id)) return false;
+      saveSettings({ googleClientId: id });
+      updateClientIdHint();
+      updateCloudSyncUI();
+      return true;
     }
 
     function loadGsiScript() {
@@ -2742,7 +2802,11 @@
           ? 'ต้องใช้ ' + owner + ' — กด「รีเซ็ตผูกบัญชี」ถ้าต้องการเปลี่ยน'
           : 'อีเมลนี้ไม่ได้รับอนุญาต';
       }
-      if (code === 'no_client_id') return 'ยังไม่ได้ใส่ Client ID ใน Settings';
+      if (code === 'no_client_id') return 'ยังไม่ได้ใส่ Client ID — เปิด ⚙ Settings วางแล้วกดบันทึก';
+      if (code === 'invalid_client_id') return 'Client ID ไม่ถูกต้อง — ต้องลงท้าย .apps.googleusercontent.com';
+      if (/client id|api key|app id|required/i.test(code)) {
+        return 'ยังไม่ได้ตั้งค่า Client ID — เปิด ⚙ Settings วางแล้วกดบันทึก';
+      }
       if (code === 'no_token' || code === 'no_access_token') return 'ไม่ได้รับ token จาก Google — ลองใหม่';
       if (code === 'token_timeout') return 'ล็อกอินนานเกินไป — ลองใหม่';
       if (code === 'access_denied') return 'Google ปฏิเสธ — เพิ่มอีเมลใน Test users ของ OAuth';
@@ -2764,7 +2828,7 @@
     }
 
     function getCloudStripState() {
-      const hasClient = !!getGoogleClientId();
+      const hasClient = hasGoogleClientId();
       if (!hasClient) return 'setup';
       if (cloudUiPhase === 'connecting') return 'connecting';
       if (cloudUiPhase === 'syncing') return 'syncing';
@@ -2782,7 +2846,7 @@
 
     function updateCloudSyncUI() {
       const s = loadSettings();
-      const hasClient = !!getGoogleClientId();
+      const hasClient = hasGoogleClientId();
       const owner = getBoundOwnerEmail();
       const stripState = getCloudStripState();
       const busy = stripState === 'connecting' || stripState === 'syncing';
@@ -2808,7 +2872,7 @@
       let detailClass = 'cloud-status-detail';
 
       if (stripState === 'setup') {
-        stripText = 'ใส่ Google OAuth Client ID ใน ⚙ Settings';
+        stripText = 'ยังไม่ตั้งค่า Client ID — เปิด ⚙ Settings วาง OAuth Client ID';
         badgeText = 'ยังไม่ตั้งค่า';
         detailText = stripText;
       } else if (stripState === 'connecting') {
@@ -2960,8 +3024,15 @@
     }
 
     async function loginCloud(forceFresh) {
-      if (!getGoogleClientId()) {
-        showToast('ใส่ Google OAuth Client ID ใน Settings ก่อน', 'error');
+      if (!persistClientIdFromInput() && !hasGoogleClientId()) {
+        showToast('วาง OAuth Client ID ใน Settings แล้วกดบันทึก', 'error');
+        setCloudPhase('error', 'ยังไม่ได้ตั้งค่า Client ID — เปิด ⚙ Settings');
+        openSettings();
+        return;
+      }
+      if (!hasGoogleClientId()) {
+        showToast('Client ID ไม่ถูกต้อง — ต้องลงท้าย .apps.googleusercontent.com', 'error');
+        setCloudPhase('error', 'Client ID ไม่ถูกต้อง');
         openSettings();
         return;
       }
@@ -3086,6 +3157,13 @@
       if (state === 'setup') openSettings();
       else if (state === 'online') syncCloudNow();
       else if (state !== 'connecting' && state !== 'syncing') loginCloud(true);
+    }
+
+    if (els.settingsGoogleClientId) {
+      els.settingsGoogleClientId.addEventListener('input', updateClientIdHint);
+      els.settingsGoogleClientId.addEventListener('blur', () => {
+        if (persistClientIdFromInput()) showToast('บันทึก Client ID แล้ว', 'success');
+      });
     }
 
     function openBackupDB() {
@@ -3405,6 +3483,7 @@
     applyBlockOrder();
     initDragReorder();
     initAutoBackup();
+    updateClientIdHint();
     updateCloudSyncUI();
     initCloudOnLoad();
     setChartPeriod(loadSettings().chartPeriodDays || 30);
