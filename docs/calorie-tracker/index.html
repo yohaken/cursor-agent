@@ -797,14 +797,14 @@
           <input type="text" id="settingsGoogleClientId" placeholder="123456789-xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
           <p class="hint">จาก Google Cloud → OAuth Web Client · ลงท้าย .apps.googleusercontent.com</p>
           <p class="hint" id="settingsClientIdHint">ยังไม่ได้บันทึก Client ID</p>
-          <details class="cloud-setup-checklist">
-            <summary>เช็กลิสต์ตั้งค่า Google Cloud</summary>
+          <details class="cloud-setup-checklist" open>
+            <summary>ตั้งค่า Google Cloud (UI ใหม่ 2025+)</summary>
+            <p class="hint" style="margin:0.35rem 0">แนะนำทำบนคอม — มือถือหาเมนูยาก</p>
             <ol>
-              <li>เปิด <strong>Google Drive API</strong> (APIs &amp; Services → Library)</li>
-              <li>OAuth consent → <strong>Test users</strong> → เพิ่มอีเมล Gmail</li>
-              <li>OAuth consent → <strong>Scopes</strong> → เพิ่ม Google Drive (drive.file)</li>
-              <li>Credentials → Web Client → origins: <code>https://yohaken.github.io</code></li>
-              <li>Client ห้ามจำกัด API แค่บางตัว (หรือต้องรวม Drive API)</li>
+              <li><strong>เปิด Drive API</strong><br>เมนู ☰ → APIs &amp; Services → <strong>Library</strong> → ค้นหา <em>Google Drive API</em> → กด <strong>Enable</strong></li>
+              <li><strong>Test user</strong><br>เมนู ☰ → <strong>Google Auth platform</strong> → แท็บ <strong>Audience</strong> → <strong>Test users</strong> → Add users → ใส่ Gmail</li>
+              <li><strong>Scope</strong> (ถ้ามีแท็บ Data access)<br>Google Auth platform → <strong>Data access</strong> → Add or remove scopes → วาง <code>https://www.googleapis.com/auth/drive.file</code> → Add to table → Save<br><em>ไม่เจอแท็บนี้? ข้ามได้ — ลองเชื่อมต่อหลังข้อ 1</em></li>
+              <li><strong>Web Client</strong><br>Google Auth platform → <strong>Clients</strong> → Web client → origins: <code>https://yohaken.github.io</code></li>
             </ol>
           </details>
           <p class="hint cloud-settings-status" id="settingsCloudStatus">สถานะ: ยังไม่เชื่อมต่อ</p>
@@ -923,7 +923,7 @@
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
     const EMAIL_SCOPE = 'openid email profile';
     const OAUTH_SCOPES = DRIVE_SCOPE + ' ' + EMAIL_SCOPE;
-    const APP_VERSION = '2026.07.09-drive-hint';
+    const APP_VERSION = '2026.07.09-gcp-guide';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -2832,7 +2832,7 @@
       if (code === 'no_email') return 'อ่านอีเมลไม่ได้ — ลองล็อกอินใหม่';
       if (code.startsWith('userinfo_')) return 'อ่านอีเมลไม่ได้ (' + code.replace('userinfo_', '') + ') — ลองใหม่';
       if (code === 'drive_403') {
-        return 'Drive API ถูกปฏิเสธ — เปิด Google Drive API + เพิ่ม scope drive.file ใน OAuth consent แล้วล็อกอินใหม่';
+        return 'Drive API ยังไม่เปิด — ไป Library เปิด Google Drive API ก่อน (ดูเช็กลิสต์ใน Settings)';
       }
       if (code === 'drive_401') return 'สิทธิ์ Drive หมดอายุ — ล็อกอินใหม่';
       if (code.startsWith('drive_')) return 'เข้า Drive ไม่ได้ (HTTP ' + code.replace('drive_', '') + ')';
