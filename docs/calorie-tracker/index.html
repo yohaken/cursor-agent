@@ -382,6 +382,29 @@
       background: var(--surface); border-radius: var(--radius); padding: 1rem;
       width: 100%; max-width: 480px; max-height: 85dvh; overflow-y: auto; box-shadow: var(--shadow);
     }
+    .edit-sheet-form {
+      display: flex; flex-direction: column; padding: 0;
+      max-height: min(92dvh, calc(100dvh - 1.5rem)); overflow: hidden;
+    }
+    .edit-sheet-header {
+      flex-shrink: 0; padding: 0.8rem 1rem 0.45rem;
+      border-bottom: 1px solid var(--surface-2);
+    }
+    .edit-sheet-header h3 { margin-bottom: 0.1rem; }
+    .sheet-scroll-hint { font-size: 0.58rem; color: var(--muted); margin: 0; }
+    .edit-sheet-body {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+      touch-action: pan-y; padding: 0.6rem 1rem 0.75rem;
+    }
+    .edit-sheet-footer {
+      flex-shrink: 0; margin-top: 0; padding: 0.6rem 1rem calc(0.65rem + var(--safe-bottom));
+      border-top: 1px solid var(--surface-2); background: var(--surface);
+    }
+    .sheet-section-label {
+      font-size: 0.68rem; font-weight: 600; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 0.03em; margin: 0.15rem 0 0.45rem;
+    }
     .edit-sheet h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
     .edit-sheet .sheet-desc { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.7rem; }
     .edit-actions { display: flex; gap: 0.35rem; margin-top: 0.7rem; }
@@ -591,7 +614,7 @@
 
       <div class="sortable-block" data-block-id="data">
         <span class="drag-handle">⋮⋮</span>
-        <section class="section collapsed" id="dataSection">
+        <section class="section" id="dataSection">
           <div class="section-toggle" id="toggleData">
             <div class="section-title" style="margin:0">สำรองข้อมูล</div>
             <span class="chevron">▼</span>
@@ -679,37 +702,44 @@
   </div>
 
   <div class="edit-overlay" id="settingsOverlay">
-    <div class="edit-sheet">
-      <h3>ตั้งค่า</h3>
-      <div class="field">
-        <label for="settingsGoogleClientId">Google OAuth Client ID</label>
-        <input type="text" id="settingsGoogleClientId" placeholder="จาก Google Cloud Console" autocomplete="off" spellcheck="false">
-        <p class="hint">ล็อกอิน Gmail + ซิงก์ไฟล์ JSON บน Drive · ครั้งแรกจะผูกอีเมลเจ้าของแอป</p>
+    <div class="edit-sheet edit-sheet-form">
+      <div class="edit-sheet-header">
+        <h3>ตั้งค่า <span id="appVersionTag" style="font-size:0.62rem;color:var(--muted);font-weight:500"></span></h3>
+        <p class="sheet-scroll-hint">เลื่อนลงเพื่อดูทั้งหมด ↓</p>
       </div>
-      <p class="sheet-desc">ข้อมูลส่วนตัว</p>
-      <div class="field">
-        <label for="settingsBirthDate">🎂 วันเกิด</label>
-        <input type="date" id="settingsBirthDate" max="">
-        <p class="hint" id="settingsAgeHint">อายุ — ปี · คำนวณอัตโนมัติทุกวัน</p>
+      <div class="edit-sheet-body" id="settingsScrollBody">
+        <p class="sheet-section-label">☁️ Google Drive</p>
+        <div class="field">
+          <label for="settingsGoogleClientId">Google OAuth Client ID</label>
+          <input type="text" id="settingsGoogleClientId" placeholder="วาง Client ID จาก Google Cloud" autocomplete="off" spellcheck="false">
+          <p class="hint">ล็อกอิน Gmail + ซิงก์ JSON บน Drive · ครั้งแรกผูกอีเมลเจ้าของ</p>
+        </div>
+        <p class="sheet-section-label">ข้อมูลส่วนตัว</p>
+        <div class="field">
+          <label for="settingsBirthDate">🎂 วันเกิด</label>
+          <input type="date" id="settingsBirthDate" max="">
+          <p class="hint" id="settingsAgeHint">อายุ — ปี · คำนวณอัตโนมัติทุกวัน</p>
+        </div>
+        <div class="field">
+          <label for="proteinMultiplier">ตัวคูณโปรตีน</label>
+          <input type="number" id="proteinMultiplier" step="0.01" min="0.5" max="3">
+        </div>
+        <p class="sheet-section-label">เทมเพลต</p>
+        <p class="sheet-desc" style="margin-bottom:0.35rem">มื้ออาหาร</p>
+        <div id="templateEditor"></div>
+        <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตมื้อ</button>
+        <p class="sheet-desc" style="margin-top:0.6rem;margin-bottom:0.35rem">ออกกำลังกาย</p>
+        <div id="exerciseTemplateEditor"></div>
+        <button type="button" class="btn btn-ghost" id="btnAddExTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตออกกำลัง</button>
+        <p class="sheet-section-label">ปรับสีกล่อง</p>
+        <div class="field">
+          <label for="blockStylePicker">เลือกกล่อง</label>
+          <select id="blockStylePicker"></select>
+        </div>
+        <div class="style-color-grid" id="blockStyleFields"></div>
+        <button type="button" class="btn btn-ghost" id="btnResetBlockStyle" style="width:100%;margin-bottom:0.25rem">รีเซ็ตกล่องนี้</button>
       </div>
-      <div class="field">
-        <label for="proteinMultiplier">ตัวคูณโปรตีน</label>
-        <input type="number" id="proteinMultiplier" step="0.01" min="0.5" max="3">
-      </div>
-      <p class="sheet-desc">เทมเพลตมื้อ</p>
-      <div id="templateEditor"></div>
-      <button type="button" class="btn btn-ghost" id="btnAddTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตมื้อ</button>
-      <p class="sheet-desc" style="margin-top:0.6rem">เทมเพลตออกกำลังกาย</p>
-      <div id="exerciseTemplateEditor"></div>
-      <button type="button" class="btn btn-ghost" id="btnAddExTemplate" style="width:100%;margin-top:0.4rem">+ เทมเพลตออกกำลัง</button>
-      <p class="sheet-desc" style="margin-top:0.6rem">ปรับสีกล่อง</p>
-      <div class="field">
-        <label for="blockStylePicker">เลือกกล่อง</label>
-        <select id="blockStylePicker"></select>
-      </div>
-      <div class="style-color-grid" id="blockStyleFields"></div>
-      <button type="button" class="btn btn-ghost" id="btnResetBlockStyle" style="width:100%;margin-bottom:0.4rem">รีเซ็ตกล่องนี้</button>
-      <div class="edit-actions">
+      <div class="edit-actions edit-sheet-footer">
         <button type="button" class="btn btn-ghost" id="btnCancelSettings">ปิด</button>
         <button type="button" class="btn" id="btnSaveSettings">บันทึก</button>
       </div>
@@ -795,6 +825,7 @@
     const BACKUP_FILENAME = 'calorie-tracker-backup.json';
     const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    const APP_VERSION = '2026.07.09-drive';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -923,6 +954,7 @@
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
       settingsBirthDate: $('#settingsBirthDate'), settingsAgeHint: $('#settingsAgeHint'),
       settingsGoogleClientId: $('#settingsGoogleClientId'),
+      appVersionTag: $('#appVersionTag'), settingsScrollBody: $('#settingsScrollBody'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
       exerciseTemplateEditor: $('#exerciseTemplateEditor'), btnAddExTemplate: $('#btnAddExTemplate'),
       btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
@@ -2344,6 +2376,7 @@
       els.settingsBirthDate.max = todayStr();
       els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
       els.settingsGoogleClientId.value = loadSettings().googleClientId || '';
+      if (els.appVersionTag) els.appVersionTag.textContent = '· ' + APP_VERSION;
       renderTemplateEditor();
       renderExerciseTemplateEditor();
       blockStyleDraft = JSON.parse(JSON.stringify(loadSettings().blockStyles || {}));
@@ -2351,6 +2384,7 @@
       editingBlockStyleId = els.blockStylePicker.value;
       renderBlockStyleFields(editingBlockStyleId);
       els.settingsOverlay.classList.add('open');
+      if (els.settingsScrollBody) els.settingsScrollBody.scrollTop = 0;
     }
     function closeSettings() {
       blockStyleDraft = null;
@@ -2983,6 +3017,9 @@
     els.btnCancelSettings.onclick = closeSettings;
     els.btnSaveSettings.onclick = saveAllSettings;
     els.settingsOverlay.onclick = (e) => { if (e.target === els.settingsOverlay) closeSettings(); };
+    els.settingsOverlay.addEventListener('touchmove', (e) => {
+      if (e.target === els.settingsOverlay) e.preventDefault();
+    }, { passive: false });
     els.btnAddTemplate.onclick = () => {
       const t = loadTemplateList();
       t.push({ id: 't' + Date.now(), label: 'มื้อใหม่', calories: 300, protein: 20 });
