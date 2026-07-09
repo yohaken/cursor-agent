@@ -385,6 +385,13 @@
     }
     .cloud-status-detail.ok { color: var(--success); }
     .cloud-settings-status { margin-top: 0.35rem; font-size: 0.66rem; }
+    .cloud-setup-checklist {
+      margin-top: 0.4rem; font-size: 0.64rem; color: var(--muted);
+      background: var(--bg); border-radius: 8px; padding: 0.45rem 0.55rem;
+    }
+    .cloud-setup-checklist summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+    .cloud-setup-checklist ol { margin: 0.4rem 0 0 1rem; padding: 0; line-height: 1.45; }
+    .cloud-setup-checklist code { font-size: 0.6rem; word-break: break-all; }
     .cloud-strip {
       display: flex; align-items: center; gap: 0.45rem;
       margin: 0 0 0.45rem; padding: 0.42rem 0.55rem;
@@ -790,6 +797,16 @@
           <input type="text" id="settingsGoogleClientId" placeholder="123456789-xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
           <p class="hint">จาก Google Cloud → OAuth Web Client · ลงท้าย .apps.googleusercontent.com</p>
           <p class="hint" id="settingsClientIdHint">ยังไม่ได้บันทึก Client ID</p>
+          <details class="cloud-setup-checklist">
+            <summary>เช็กลิสต์ตั้งค่า Google Cloud</summary>
+            <ol>
+              <li>เปิด <strong>Google Drive API</strong> (APIs &amp; Services → Library)</li>
+              <li>OAuth consent → <strong>Test users</strong> → เพิ่มอีเมล Gmail</li>
+              <li>OAuth consent → <strong>Scopes</strong> → เพิ่ม Google Drive (drive.file)</li>
+              <li>Credentials → Web Client → origins: <code>https://yohaken.github.io</code></li>
+              <li>Client ห้ามจำกัด API แค่บางตัว (หรือต้องรวม Drive API)</li>
+            </ol>
+          </details>
           <p class="hint cloud-settings-status" id="settingsCloudStatus">สถานะ: ยังไม่เชื่อมต่อ</p>
           <button type="button" class="btn btn-ghost" id="btnResetCloudSettings" style="width:100%;margin-top:0.35rem;font-size:0.72rem">รีเซ็ตการผูกบัญชี Google</button>
         </div>
@@ -906,7 +923,7 @@
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
     const EMAIL_SCOPE = 'openid email profile';
     const OAUTH_SCOPES = DRIVE_SCOPE + ' ' + EMAIL_SCOPE;
-    const APP_VERSION = '2026.07.09-driveapi-fix';
+    const APP_VERSION = '2026.07.09-drive-hint';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -2814,7 +2831,9 @@
       if (code === 'gsi_load') return 'โหลด Google Sign-In ไม่ได้ — ตรวจเน็ต';
       if (code === 'no_email') return 'อ่านอีเมลไม่ได้ — ลองล็อกอินใหม่';
       if (code.startsWith('userinfo_')) return 'อ่านอีเมลไม่ได้ (' + code.replace('userinfo_', '') + ') — ลองใหม่';
-      if (code === 'drive_403') return 'Drive API ถูกปฏิเสธ — เปิด Google Drive API ใน Cloud Console';
+      if (code === 'drive_403') {
+        return 'Drive API ถูกปฏิเสธ — เปิด Google Drive API + เพิ่ม scope drive.file ใน OAuth consent แล้วล็อกอินใหม่';
+      }
       if (code === 'drive_401') return 'สิทธิ์ Drive หมดอายุ — ล็อกอินใหม่';
       if (code.startsWith('drive_')) return 'เข้า Drive ไม่ได้ (HTTP ' + code.replace('drive_', '') + ')';
       if (code === 'oauth_error') return 'Google OAuth ผิดพลาด — ตรวจ Client ID และ JavaScript origins';
@@ -3154,7 +3173,7 @@
 
     function onCloudStripAction() {
       const state = getCloudStripState();
-      if (state === 'setup') openSettings();
+      if (state === 'setup' || state === 'error') openSettings();
       else if (state === 'online') syncCloudNow();
       else if (state !== 'connecting' && state !== 'syncing') loginCloud(true);
     }
