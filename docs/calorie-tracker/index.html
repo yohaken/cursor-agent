@@ -788,7 +788,7 @@
         <div class="field">
           <label for="settingsGoogleClientId">Google OAuth Client ID</label>
           <input type="text" id="settingsGoogleClientId" placeholder="วาง Client ID จาก Google Cloud" autocomplete="off" spellcheck="false">
-          <p class="hint">ล็อกอิน Gmail + ซิงก์ JSON บน Drive · ครั้งแรกผูกอีเมลเจ้าของ</p>
+          <p class="hint">ล็อกอิน Gmail + ซิงก์ JSON บน Drive · เปิด Drive API + เพิ่ม Test user ใน Google Cloud</p>
           <p class="hint cloud-settings-status" id="settingsCloudStatus">สถานะ: ยังไม่เชื่อมต่อ</p>
           <button type="button" class="btn btn-ghost" id="btnResetCloudSettings" style="width:100%;margin-top:0.35rem;font-size:0.72rem">รีเซ็ตการผูกบัญชี Google</button>
         </div>
@@ -903,7 +903,9 @@
     const BACKUP_FILENAME = 'calorie-tracker-backup.json';
     const BACKUP_HANDLE_DB = 'calorieTrackerBackup';
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-    const APP_VERSION = '2026.07.09-cloud-strip';
+    const EMAIL_SCOPE = 'openid email profile';
+    const OAUTH_SCOPES = DRIVE_SCOPE + ' ' + EMAIL_SCOPE;
+    const APP_VERSION = '2026.07.09-oauth-fix';
 
     const PERIODS = [
       { days: 3, label: '3d' }, { days: 7, label: '7d' }, { days: 15, label: '15d' },
@@ -2568,23 +2570,45 @@
         const clientId = getGoogleClientId();
         if (!clientId) { reject(new Error('no_client_id')); return; }
         try { await loadGsiScript(); } catch { reject(new Error('gsi_load')); return; }
+
+        if (pendingTokenReject) {
+          try { pendingTokenReject(new Error('token_superseded')); } catch { /* ignore */ }
+        }
         pendingTokenResolve = resolve;
         pendingTokenReject = reject;
-        if (!googleTokenClient) {
-          googleTokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: clientId,
-            scope: DRIVE_SCOPE,
-            callback: (resp) => {
-              if (resp.error) {
-                pendingTokenReject?.(new Error(resp.error));
-              } else {
-                googleAccessToken = resp.access_token;
-                pendingTokenResolve?.(resp.access_token);
-              }
-              pendingTokenResolve = pendingTokenReject = null;
-            },
-          });
-        }
+
+        const timeoutId = setTimeout(() => {
+          if (!pendingTokenReject) return;
+          pendingTokenReject(new Error('token_timeout'));
+          pendingTokenResolve = pendingTokenReject = null;
+        }, 90000);
+
+        const finish = (fn) => {
+          clearTimeout(timeoutId);
+          fn();
+          pendingTokenResolve = pendingTokenReject = null;
+        };
+
+        googleTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: OAUTH_SCOPES,
+          callback: (resp) => {
+            if (!pendingTokenResolve && !pendingTokenReject) return;
+            if (resp.error) {
+              finish(() => pendingTokenReject?.(new Error(resp.error)));
+            } else if (!resp.access_token) {
+              finish(() => pendingTokenReject?.(new Error('no_access_token')));
+            } else {
+              googleAccessToken = resp.access_token;
+              finish(() => pendingTokenResolve?.(resp.access_token));
+            }
+          },
+          error_callback: (err) => {
+            if (!pendingTokenReject) return;
+            const code = err?.type || err?.message || 'oauth_error';
+            finish(() => pendingTokenReject?.(new Error(code)));
+          },
+        });
         googleTokenClient.requestAccessToken({ prompt: prompt || '' });
       });
     }
@@ -2593,7 +2617,7 @@
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: 'Bearer ' + token },
       });
-      if (!res.ok) throw new Error('userinfo');
+      if (!res.ok) throw new Error('userinfo_' + res.status);
       const j = await res.json();
       if (!j.email) throw new Error('no_email');
       return j.email;
@@ -2692,12 +2716,24 @@
           : 'อีเมลนี้ไม่ได้รับอนุญาต';
       }
       if (code === 'no_client_id') return 'ยังไม่ได้ใส่ Client ID ใน Settings';
-      if (code === 'no_token') return 'เซสชันหมดอายุ — ล็อกอินใหม่';
+      if (code === 'no_token' || code === 'no_access_token') return 'ไม่ได้รับ token จาก Google — ลองใหม่';
+      if (code === 'token_timeout') return 'ล็อกอินนานเกินไป — ลองใหม่';
       if (code === 'access_denied') return 'Google ปฏิเสธ — เพิ่มอีเมลใน Test users ของ OAuth';
       if (code === 'popup_closed_by_user') return 'ปิดหน้าต่างล็อกอินก่อนเสร็จ';
       if (code === 'gsi_load') return 'โหลด Google Sign-In ไม่ได้ — ตรวจเน็ต';
-      if (code.startsWith('drive_')) return 'เข้า Drive ไม่ได้ (' + code.replace('drive_', '') + ')';
-      return 'ตรวจ Client ID, Test user แล้วลองใหม่';
+      if (code === 'no_email') return 'อ่านอีเมลไม่ได้ — ลองล็อกอินใหม่';
+      if (code.startsWith('userinfo_')) return 'อ่านอีเมลไม่ได้ (' + code.replace('userinfo_', '') + ') — ลองใหม่';
+      if (code === 'drive_403') return 'Drive API ถูกปฏิเสธ — เปิด Google Drive API ใน Cloud Console';
+      if (code === 'drive_401') return 'สิทธิ์ Drive หมดอายุ — ล็อกอินใหม่';
+      if (code.startsWith('drive_')) return 'เข้า Drive ไม่ได้ (HTTP ' + code.replace('drive_', '') + ')';
+      if (code === 'oauth_error') return 'Google OAuth ผิดพลาด — ตรวจ Client ID และ JavaScript origins';
+      return code ? ('ข้อผิดพลาด: ' + code) : 'ตรวจ Client ID, Test user, Drive API แล้วลองใหม่';
+    }
+
+    function showCloudError(err, fallbackToast) {
+      const msg = cloudErrorMessage(err);
+      setCloudPhase('error', msg);
+      if (fallbackToast !== false) showToast(msg, 'error');
     }
 
     function getCloudStripState() {
@@ -2879,7 +2915,7 @@
         } catch (e) {
           cloudLive = false;
           saveSettings({ cloudSessionActive: false });
-          setCloudPhase('error', cloudErrorMessage(e));
+          showCloudError(e, false);
         }
       }, 2200);
     }
@@ -2911,11 +2947,8 @@
       } catch (e) {
         cloudLive = false;
         saveSettings({ cloudSessionActive: false });
-        setCloudPhase('error', cloudErrorMessage(e));
-        if (e.message === 'not_allowed') showToast('อีเมลไม่ตรงบัญชีที่ผูกไว้', 'error');
-        else if (e.message === 'no_client_id') showToast('ใส่ Client ID ใน Settings', 'error');
-        else if (e.message === 'access_denied') showToast('Google ปฏิเสธ — เพิ่ม Test user', 'error');
-        else if (e.message !== 'popup_closed_by_user') showToast('เข้าสู่ระบบไม่สำเร็จ', 'error');
+        if (e.message !== 'popup_closed_by_user') showCloudError(e);
+        else setCloudPhase('error', cloudErrorMessage(e));
       }
     }
 
@@ -2942,9 +2975,7 @@
       } catch (e) {
         cloudLive = false;
         saveSettings({ cloudSessionActive: false });
-        setCloudPhase('error', cloudErrorMessage(e));
-        if (e.message === 'not_allowed') showToast('อีเมลไม่ตรง', 'error');
-        else showToast('ซิงก์ไม่สำเร็จ — ล็อกอินใหม่', 'error');
+        showCloudError(e);
       }
     }
 
@@ -2994,7 +3025,7 @@
       } catch (e) {
         cloudLive = false;
         saveSettings({ cloudSessionActive: false });
-        setCloudPhase('error', cloudErrorMessage(e));
+        showCloudError(e, false);
       }
     }
 
