@@ -267,6 +267,14 @@
     .field textarea { resize: vertical; min-height: 48px; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
     .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
+    .age-display {
+      background: var(--bg); border: 1px solid var(--surface-2); border-radius: 8px;
+      padding: 0.5rem; font-size: 16px; font-weight: 600; color: var(--text); min-height: 2.35rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .age-display.muted { color: var(--muted); font-weight: 500; font-size: 0.82rem; }
+    .age-display.tap-hint { cursor: pointer; }
+
 
     .info-btn {
       background: none; border: none; color: var(--muted); font-size: 0.55rem;
@@ -509,8 +517,8 @@
               <input type="number" id="profileWeight" inputmode="decimal" step="0.1" min="0">
             </div>
             <div class="field">
-              <label for="profileAge">อายุ</label>
-              <input type="number" id="profileAge" inputmode="numeric" min="1" max="120">
+              <label>อายุ</label>
+              <div class="age-display muted tap-hint" id="profileAgeDisplay" title="แตะเพื่อตั้งวันเกิดใน Settings">ตั้งวันเกิดใน ⚙</div>
             </div>
             <div class="field">
               <label for="profileWaist">เอว cm</label>
@@ -664,6 +672,12 @@
   <div class="edit-overlay" id="settingsOverlay">
     <div class="edit-sheet">
       <h3>ตั้งค่า</h3>
+      <p class="sheet-desc">ข้อมูลส่วนตัว</p>
+      <div class="field">
+        <label for="settingsBirthDate">🎂 วันเกิด</label>
+        <input type="date" id="settingsBirthDate" max="">
+        <p class="hint" id="settingsAgeHint">อายุ — ปี · คำนวณอัตโนมัติทุกวัน</p>
+      </div>
       <div class="field">
         <label for="proteinMultiplier">ตัวคูณโปรตีน</label>
         <input type="number" id="proteinMultiplier" step="0.01" min="0.5" max="3">
@@ -856,7 +870,7 @@
       calSub: $('#calSub'), balance: $('#balance'), balanceCard: $('#balanceCard'), balSub: $('#balSub'),
       estCard: $('#estCard'), estVal: $('#estVal'), estSub: $('#estSub'),
       bsumStrip: $('#bsumStrip'), adjLink: $('#adjLink'),
-      profileWeight: $('#profileWeight'), profileAge: $('#profileAge'), profileWaist: $('#profileWaist'),
+      profileWeight: $('#profileWeight'), profileAgeDisplay: $('#profileAgeDisplay'), profileWaist: $('#profileWaist'),
       targetWeight: $('#targetWeight'), targetWaist: $('#targetWaist'), goalProgress: $('#goalProgress'),
       programStartDate: $('#programStartDate'),
       exerciseKcal: $('#exerciseKcal'), exerciseNote: $('#exerciseNote'), exerciseTime: $('#exerciseTime'),
@@ -886,6 +900,7 @@
       btnWeightHistory: $('#btnWeightHistory'), btnCloseWeightHistory: $('#btnCloseWeightHistory'),
       btnSaveWeightHistory: $('#btnSaveWeightHistory'),
       settingsOverlay: $('#settingsOverlay'), proteinMultiplier: $('#proteinMultiplier'),
+      settingsBirthDate: $('#settingsBirthDate'), settingsAgeHint: $('#settingsAgeHint'),
       templateEditor: $('#templateEditor'), btnAddTemplate: $('#btnAddTemplate'),
       exerciseTemplateEditor: $('#exerciseTemplateEditor'), btnAddExTemplate: $('#btnAddExTemplate'),
       btnSettings: $('#btnSettings'), btnTheme: $('#btnTheme'),
@@ -996,7 +1011,7 @@
         blockStyles: {},
         templates: loadTemplateList(),
         exerciseTemplates: loadExerciseTemplateList(),
-        profile: { weight: '', age: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
+        profile: { weight: '', age: '', birthDate: '', waist: '', targetWeight: '', targetWaist: '', weightLog: {}, waistLog: {} },
       };
     }
 
@@ -1021,6 +1036,7 @@
           profile: {
             weight: s.profile?.weight ?? '',
             age: s.profile?.age ?? '',
+            birthDate: s.profile?.birthDate ?? '',
             waist: s.profile?.waist ?? '',
             targetWeight: s.profile?.targetWeight ?? '',
             targetWaist: s.profile?.targetWaist ?? '',
@@ -1041,6 +1057,48 @@
       next.exerciseTemplates = loadExerciseTemplateList();
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       scheduleAutoBackup();
+    }
+
+    function calcAgeFromBirthDate(birthDate, asOfDate) {
+      if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+      const birth = new Date(birthDate + 'T12:00:00');
+      const asOf = new Date((asOfDate || todayStr()) + 'T12:00:00');
+      if (birth > asOf) return null;
+      let age = asOf.getFullYear() - birth.getFullYear();
+      const md = asOf.getMonth() - birth.getMonth();
+      if (md < 0 || (md === 0 && asOf.getDate() < birth.getDate())) age--;
+      return age >= 0 && age <= 150 ? age : null;
+    }
+
+    function getProfileBirthDate() {
+      return loadSettings().profile.birthDate || '';
+    }
+
+    function getProfileAge(asOfDate) {
+      const birthDate = getProfileBirthDate();
+      const computed = calcAgeFromBirthDate(birthDate, asOfDate || todayStr());
+      if (computed != null) return computed;
+      const legacy = parseInt(loadSettings().profile.age, 10);
+      return !isNaN(legacy) && legacy > 0 ? legacy : null;
+    }
+
+    function formatAgeHint(birthDate, asOfDate) {
+      const age = calcAgeFromBirthDate(birthDate, asOfDate);
+      if (age == null) return 'อายุ — ปี · คำนวณอัตโนมัติทุกวัน';
+      return 'อายุ ' + age + ' ปี · คำนวณจากวันเกิด';
+    }
+
+    function renderProfileAge(asOfDate) {
+      const birthDate = getProfileBirthDate();
+      const age = getProfileAge(asOfDate || todayStr());
+      if (age != null) {
+        els.profileAgeDisplay.textContent = age + ' ปี';
+        els.profileAgeDisplay.classList.remove('muted');
+      } else {
+        els.profileAgeDisplay.textContent = 'ตั้งวันเกิดใน ⚙';
+        els.profileAgeDisplay.classList.add('muted');
+      }
+      if (els.settingsAgeHint) els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
     }
 
     function getWeightLog() { return loadSettings().profile.weightLog || {}; }
@@ -2069,7 +2127,7 @@
       const w = getWeightOnDate(currentDate);
       const wa = getWaistOnDate(currentDate);
       els.profileWeight.value = w > 0 ? w : '';
-      els.profileAge.value = profile.age;
+      renderProfileAge(currentDate);
       els.profileWaist.value = wa > 0 ? wa : '';
       els.targetWeight.value = profile.targetWeight || '';
       els.targetWaist.value = profile.targetWaist || '';
@@ -2247,6 +2305,10 @@
 
     function openSettings() {
       els.proteinMultiplier.value = loadSettings().proteinMultiplier;
+      const birthDate = getProfileBirthDate();
+      els.settingsBirthDate.value = birthDate;
+      els.settingsBirthDate.max = todayStr();
+      els.settingsAgeHint.textContent = formatAgeHint(birthDate, todayStr());
       renderTemplateEditor();
       renderExerciseTemplateEditor();
       blockStyleDraft = JSON.parse(JSON.stringify(loadSettings().blockStyles || {}));
@@ -2283,6 +2345,16 @@
       }
       flushBlockStyleDraft();
       partial.blockStyles = blockStyleDraft || {};
+      const birthDate = els.settingsBirthDate.value;
+      if (birthDate && birthDate > todayStr()) {
+        showToast('วันเกิดต้องไม่เกินวันนี้', 'error');
+        return;
+      }
+      partial.profile = {
+        ...loadSettings().profile,
+        birthDate: birthDate || '',
+      };
+      if (birthDate) partial.profile.age = String(calcAgeFromBirthDate(birthDate, todayStr()) || '');
       saveSettings(partial);
       blockStyleDraft = null;
       closeSettings(); refresh();
@@ -2449,11 +2521,9 @@
       setWaistLogEntry(currentDate, els.profileWaist.value);
       refresh();
     };
-    ['profileAge'].forEach((id) => {
-      document.getElementById(id).oninput = () => {
-        saveSettings({ profile: { ...loadSettings().profile, age: els.profileAge.value } });
-      };
-    });
+    els.settingsBirthDate.oninput = () => {
+      els.settingsAgeHint.textContent = formatAgeHint(els.settingsBirthDate.value, todayStr());
+    };
     function saveGoals() {
       saveSettings({
         profile: {
@@ -2578,6 +2648,7 @@
     };
 
     els.btnSettings.onclick = openSettings;
+    els.profileAgeDisplay.onclick = openSettings;
     els.btnCancelSettings.onclick = closeSettings;
     els.btnSaveSettings.onclick = saveAllSettings;
     els.settingsOverlay.onclick = (e) => { if (e.target === els.settingsOverlay) closeSettings(); };
